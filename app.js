@@ -1144,145 +1144,8 @@ class BrandKitGenerator {
         Renderer.renderPreviews(this.getState());
     }
 
-    /**
-     * Render multi-line text on a canvas with automatic scaling.
-     * @param {CanvasRenderingContext2D} ctx - Canvas 2D context
-     * @param {number} size - Canvas size in pixels
-     * @param {number} padding - Padding ratio (0-1)
-     */
-    renderMultiLineText(ctx, size, padding = CONFIG.PADDING.LOGO) {
-        const paddingPx = size * padding;
-        const availableSize = size - paddingPx * 2;
-
-        // Calculate dimensions for all lines at base size
-        let maxLineWidth = 0;
-        let totalHeight = 0;
-        const lineMetrics = [];
-
-        this.lines.forEach((line, index) => {
-            const lineFontSize = (line.fontSize / 100) * this.baseFontSize;
-            ctx.font = `${this.fontWeight} ${lineFontSize}px "${this.font}"`;
-
-            let lineWidth = 0;
-            line.letters.forEach((letter, i) => {
-                lineWidth += ctx.measureText(letter.char).width;
-                if (i < line.letters.length - 1) {
-                    lineWidth += line.letterSpacing;
-                }
-            });
-
-            maxLineWidth = Math.max(maxLineWidth, lineWidth);
-            const lineHeight = lineFontSize * 1.1;
-            totalHeight += lineHeight;
-            if (index < this.lines.length - 1) {
-                totalHeight += this.lineSpacing;
-            }
-
-            lineMetrics.push({ lineWidth, lineHeight, lineFontSize, line });
-        });
-
-        // Calculate scale to fit
-        const scaleX = availableSize / maxLineWidth;
-        const scaleY = availableSize / totalHeight;
-        const scale = Math.min(scaleX, scaleY, 1);
-
-        // Recalculate with scaled dimensions
-        const scaledTotalHeight = totalHeight * scale;
-        let startY = (size - scaledTotalHeight) / 2;
-
-        // Draw each line
-        lineMetrics.forEach(({ lineWidth, lineHeight, lineFontSize, line }) => {
-            const scaledFontSize = lineFontSize * scale;
-            const scaledLineHeight = lineHeight * scale;
-            const scaledLineSpacing = this.lineSpacing * scale;
-
-            ctx.font = `${this.fontWeight} ${scaledFontSize}px "${this.font}"`;
-            ctx.textBaseline = 'top';
-
-            // Recalculate line width with scaled font
-            let scaledLineWidth = 0;
-            const scaledLetterSpacing = line.letterSpacing * scale;
-            line.letters.forEach((letter, i) => {
-                scaledLineWidth += ctx.measureText(letter.char).width;
-                if (i < line.letters.length - 1) {
-                    scaledLineWidth += scaledLetterSpacing;
-                }
-            });
-
-            // Calculate X position based on alignment
-            let x;
-            if (this.horizontalAlign === 'left') {
-                x = paddingPx;
-            } else if (this.horizontalAlign === 'right') {
-                x = size - paddingPx - scaledLineWidth;
-            } else {
-                // center
-                x = (size - scaledLineWidth) / 2;
-            }
-
-            // Calculate positions for all letters
-            const positions = [];
-            line.letters.forEach((letter) => {
-                positions.push({ letter, x });
-                x += ctx.measureText(letter.char).width + scaledLetterSpacing;
-            });
-
-            // Draw in correct layer order
-            const drawOrder = this.layerOrder === 'left' ? [...positions].reverse() : positions;
-            drawOrder.forEach(({ letter, x }) => {
-                ctx.fillStyle = letter.color || this.defaultColor;
-                ctx.fillText(letter.char, x, startY);
-            });
-
-            startY += scaledLineHeight + scaledLineSpacing;
-        });
-    }
-
     renderAppIcons() {
         Renderer.renderAppIconPreviews(this.getState());
-    }
-
-    /**
-     * Render an app icon with rounded corners and border.
-     * @param {string} canvasId - DOM id of the canvas element
-     * @param {number} size - Icon size in pixels
-     * @param {number} radiusRatio - Corner radius ratio (0-1)
-     */
-    renderAppIcon(canvasId, size, radiusRatio) {
-        const canvas = document.getElementById(canvasId);
-        const ctx = canvas.getContext('2d');
-        const radius = size * radiusRatio;
-
-        canvas.width = size;
-        canvas.height = size;
-
-        // Draw rounded rectangle background
-        ctx.beginPath();
-        ctx.roundRect(0, 0, size, size, radius);
-        ctx.fillStyle = this.appIconBg;
-        ctx.fill();
-
-        // Draw border if enabled (inset to avoid corner overflow)
-        if (this.appIconBorderEnabled) {
-            const borderWidth = 1;
-            const inset = borderWidth / 2;
-            ctx.beginPath();
-            ctx.roundRect(inset, inset, size - borderWidth, size - borderWidth, radius - inset);
-            ctx.strokeStyle = this.appIconBorder;
-            ctx.lineWidth = borderWidth;
-            ctx.stroke();
-        }
-
-        // Clip to rounded rectangle for the logo
-        ctx.save();
-        ctx.beginPath();
-        ctx.roundRect(0, 0, size, size, radius);
-        ctx.clip();
-
-        // Draw multi-line logo text
-        this.renderMultiLineText(ctx, size, CONFIG.PADDING.APP_ICON);
-
-        ctx.restore();
     }
 
     /**
@@ -1304,21 +1167,18 @@ class BrandKitGenerator {
         return Renderer.renderAppIconToCanvas(size, radiusRatio, this.getState());
     }
 
-    // ==================== SVG GENERATION ====================
+    // ==================== FONT LOADING (for SVG preview) ====================
 
-    // Load wawoff2 WASM module for WOFF2 decompression
+    /**
+     * Load wawoff2 WASM module for WOFF2 decompression.
+     * @async
+     */
     async loadWawoff2() {
-        if (window.wawoff2Ready) {
-            console.log('wawoff2 already loaded');
-            return;
-        }
+        if (window.wawoff2Ready) return;
 
-        console.log('Loading wawoff2...');
         return new Promise((resolve, reject) => {
-            // Set up Module before loading script
             window.Module = {
                 onRuntimeInitialized: () => {
-                    console.log('wawoff2 initialized');
                     window.wawoff2Ready = true;
                     resolve();
                 }
@@ -1326,104 +1186,82 @@ class BrandKitGenerator {
 
             const script = document.createElement('script');
             script.src = 'https://unpkg.com/wawoff2@2.0.1/build/decompress_binding.js';
-            script.onerror = () => {
-                console.error('Failed to load wawoff2 script');
-                reject(new Error('Failed to load wawoff2'));
-            };
+            script.onerror = () => reject(new Error('Failed to load wawoff2'));
             document.head.appendChild(script);
         });
     }
 
+    /**
+     * Fetch and decompress font for current text (subsetted).
+     * @async
+     * @returns {Promise<ArrayBuffer>} TTF font buffer
+     */
     async fetchAndDecompressFont() {
-        // Get font URL from Google Fonts CSS
-        // Add text parameter with all logo text to ensure those glyphs are included
         const fontFamily = this.font.replace(/ /g, '+');
         const allText = this.lines.map(l => l.text).join('');
         const textParam = encodeURIComponent(allText);
-        // Request specific weight explicitly
         const cssUrl = `https://fonts.googleapis.com/css2?family=${fontFamily}:wght@${this.fontWeight}&text=${textParam}&display=swap`;
 
-        console.log('Fetching font CSS:', cssUrl);
-        console.log('Requested weight:', this.fontWeight);
         const cssResponse = await fetch(cssUrl);
         const css = await cssResponse.text();
-        console.log('CSS response:', css);
 
-        // Extract WOFF2 URL
         const urlMatch = css.match(/url\(([^)]+)\)/);
-        if (!urlMatch) {
-            throw new Error('Could not find font URL in CSS');
-        }
-        const fontUrl = urlMatch[1].replace(/['"]/g, '');
-        console.log('Font URL:', fontUrl);
+        if (!urlMatch) throw new Error('Could not find font URL in CSS');
 
-        // Fetch WOFF2 font
+        const fontUrl = urlMatch[1].replace(/['"]/g, '');
         const fontResponse = await fetch(fontUrl);
         const woff2Buffer = await fontResponse.arrayBuffer();
-        console.log('WOFF2 buffer size:', woff2Buffer.byteLength);
 
-        // Decompress WOFF2 to TTF
-        console.log('Decompressing WOFF2...');
         const ttfUint8 = Module.decompress(woff2Buffer);
-        console.log('TTF decompressed, length:', ttfUint8.length);
-
-        // Convert Uint8Array to ArrayBuffer
-        const ttfBuffer = ttfUint8.buffer.slice(ttfUint8.byteOffset, ttfUint8.byteOffset + ttfUint8.byteLength);
-        console.log('TTF ArrayBuffer size:', ttfBuffer.byteLength);
-
-        return ttfBuffer;
+        return ttfUint8.buffer.slice(ttfUint8.byteOffset, ttfUint8.byteOffset + ttfUint8.byteLength);
     }
 
-    // Get cached opentype font or load it
+    /**
+     * Get cached opentype font or load it.
+     * @async
+     * @returns {Promise<Object>} Opentype.js font object
+     */
     async getOpentypeFont() {
         const allText = this.lines.map(l => l.text).join('');
         const cacheKey = `${this.font}:${this.fontWeight}:${allText}`;
 
-        // Return cached font if valid
         if (this.opentypeFont && this.fontCacheKey === cacheKey) {
             return this.opentypeFont;
         }
 
-        // Load wawoff2 and font
         await this.loadWawoff2();
         const ttfBuffer = await this.fetchAndDecompressFont();
         const font = opentype.parse(ttfBuffer);
 
-        // Cache it
         this.opentypeFont = font;
         this.fontCacheKey = cacheKey;
 
         return font;
     }
 
-    // Fetch full font (not subsetted) for inclusion in brand kit
+    /**
+     * Fetch full font (not subsetted) for brand kit export.
+     * @async
+     * @returns {Promise<ArrayBuffer>} TTF font buffer
+     */
     async fetchFullFont() {
         await this.loadWawoff2();
 
         const fontFamily = this.font.replace(/ /g, '+');
-        // Request full font WITHOUT text parameter to get all glyphs
         const cssUrl = `https://fonts.googleapis.com/css2?family=${fontFamily}:wght@${this.fontWeight}&display=swap`;
 
-        console.log('Fetching full font CSS:', cssUrl);
         const cssResponse = await fetch(cssUrl);
         const css = await cssResponse.text();
 
-        // Extract WOFF2 URL
         const urlMatch = css.match(/url\(([^)]+)\)/);
-        if (!urlMatch) {
-            throw new Error('Could not find font URL in CSS');
-        }
-        const fontUrl = urlMatch[1].replace(/['"]/g, '');
+        if (!urlMatch) throw new Error('Could not find font URL in CSS');
 
-        // Fetch WOFF2 font
+        const fontUrl = urlMatch[1].replace(/['"]/g, '');
         const fontResponse = await fetch(fontUrl);
         const woff2Buffer = await fontResponse.arrayBuffer();
 
-        // Decompress WOFF2 to TTF
         const ttfUint8 = Module.decompress(woff2Buffer);
-        const ttfBuffer = ttfUint8.buffer.slice(ttfUint8.byteOffset, ttfUint8.byteOffset + ttfUint8.byteLength);
-
-        return ttfBuffer;
+        return ttfUint8.buffer.slice(ttfUint8.byteOffset, ttfUint8.byteOffset + ttfUint8.byteLength);
     }
 
     /**
@@ -1432,10 +1270,7 @@ class BrandKitGenerator {
      * @returns {Promise<string>} SVG markup
      */
     async generateSVG() {
-        // Use cached opentype font
         const font = await this.getOpentypeFont();
-        console.log('Using font:', font.names.fullName);
-
         const padding = CONFIG.PADDING.SVG;
 
         // Calculate dimensions for all lines
@@ -1583,23 +1418,18 @@ class BrandKitGenerator {
         // Generate SVG file
         progressText.textContent = 'Generating SVG...';
         try {
-            console.log('Starting SVG generation...');
             const svg = await this.generateSVG();
-            console.log('SVG generated successfully');
             zip.folder('logos').file('logo.svg', svg);
         } catch (e) {
             console.error('SVG generation failed:', e);
-            alert('SVG Error: ' + e.message);
         }
 
         // Add font file
         progressText.textContent = 'Downloading font...';
         try {
-            console.log('Fetching full font...');
             const fontBuffer = await this.fetchFullFont();
             const fontFileName = `${this.font.replace(/\s+/g, '-')}-${this.fontWeight}.ttf`;
             zip.folder('fonts').file(fontFileName, fontBuffer);
-            console.log('Font added:', fontFileName);
 
             // Add font license info
             const fontLicense = `Font: ${this.font}

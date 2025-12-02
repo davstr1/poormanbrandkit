@@ -6,96 +6,88 @@
 
 ## État actuel
 
-**4000 lignes** réparties en 3 fichiers :
-- `app.js` — 1888 lignes, une grosse classe `BrandKitGenerator`
-- `index.html` — 664 lignes, structure + fonts embarquées
-- `style.css` — 1468 lignes, tout en vrac
+**~4650 lignes** réparties en 6 fichiers :
+- `app.js` — 1723 lignes, classe principale `BrandKitGenerator`
+- `renderer.js` — 242 lignes, rendu canvas
+- `exporter.js` — 385 lignes, génération ZIP
+- `storage.js` — 130 lignes, localStorage
+- `index.html` — 667 lignes, structure + fonts embarquées
+- `style.css` — 1522 lignes, styles avec CSS variables
 
-Ça marche. C'est pas joli côté code, mais ça fait le job.
-
----
-
-## Ce qui pue (dette technique)
-
-### 1. `app.js` est un monolithe
-
-Une seule classe de ~1900 lignes qui fait :
-- Gestion d'état (lines, fonts, colors)
-- Manipulation DOM (render editors, modals)
-- Rendu canvas (previews, icons)
-- Rendu SVG (opentype.js)
-- Export ZIP
-- LocalStorage
-- Event binding
-
-**Problème** : Impossible de toucher un truc sans risquer d'en casser trois autres.
-
-**Fix potentiel** : Découper en modules (ES6) quand ça devient vraiment ingérable. Pas urgent tant que ça marche.
-
-### 2. CSS sans structure
-
-1468 lignes de CSS avec des commentaires `/* Section */` comme seule organisation. Pas de méthodologie (BEM, etc.), des sélecteurs qui se marchent dessus.
-
-**Problème** : Ajouter un style = prier pour pas casser autre chose.
-
-**Fix potentiel** :
-- Soit on s'en fout (ça marche)
-- Soit on passe en CSS custom properties pour les valeurs répétées
-- Soit on split en fichiers thématiques (base, components, layout)
-
-### 3. Fonts inline dans le HTML
-
-La liste des Google Fonts est hardcodée dans `<select>` dans le HTML. ~100 fonts = beaucoup de lignes.
-
-**Problème** : Ajouter/retirer une font = éditer le HTML.
-
-**Fix potentiel** : Externaliser dans un `fonts.json` et générer dynamiquement. Overkill pour maintenant.
-
-### 4. Pas de build step
-
-Vanilla JS, vanilla CSS, pas de bundler. C'est un choix, pas un oubli.
-
-**Avantage** : Zéro config, ouvre le fichier et ça marche.
-
-**Inconvénient** : Pas de minification, pas de tree-shaking, pas de TypeScript.
-
-**Verdict** : On garde comme ça. Un bundler pour 4000 lignes c'est du overhead inutile.
+Ça marche. Le code est maintenant modulaire et documenté.
 
 ---
 
-## Améliorations utiles (par priorité)
+## Ce qui a été fait ✅
 
-### Priorité 1 : Quick wins
+### Priorité 1 : Quick wins ✅
+- [x] **`.gitignore` ajouté** — ignore `.DS_Store`, fichiers éditeurs, etc.
+- [x] **Fichiers MD obsolètes supprimés** — `solution.md`, `plan-icons-logo-separation.md`, `instructions.md`
 
-- [ ] **Supprimer `the-poor-man.png`** — 2MB inutiles, on a `avatar.webp` (4KB)
-- [ ] **Ajouter `.gitignore`** — ignorer `.DS_Store`, éventuels fichiers de test
-- [ ] **Nettoyer les fichiers MD obsolètes** — `solution.md`, `plan-icons-logo-separation.md`, `instructions.md` si plus utiles
+### Priorité 2 : DX (Developer Experience) ✅
+- [x] **Constantes magiques extraites** — objet `CONFIG` en haut de `app.js` avec toutes les tailles, paddings, defaults
+- [x] **Documentation JSDoc** — 15+ méthodes principales documentées
+- [x] **`README.md` ajouté** — présentation, usage, tech stack
 
-### Priorité 2 : DX (Developer Experience)
+### Priorité 3 : Refacto légère ✅
+- [x] **`renderer.js` créé** — `renderMultiLineText()`, `renderAppIcon()`, `renderToCanvas()`, `renderPreviews()`
+- [x] **`exporter.js` créé** — `generateBrandKit()`, `generateSVG()`, `fetchFullFont()`, génération README/LICENSE
+- [x] **`storage.js` créé** — `saveConfig()`, `getSavedConfigs()`, `deleteConfig()`, `parseConfig()`
 
-- [ ] **Extraire les constantes magiques** — tailles de preview (512, 256, 128...), padding ratios, etc. dans un objet `CONFIG` en haut de `app.js`
-- [ ] **Documenter les méthodes principales** — JSDoc basique sur les 10-15 méthodes clés
-- [ ] **Ajouter un `README.md`** — comment lancer, comment contribuer, licence
+---
 
-### Priorité 3 : Refacto légère
+### Priorité 4 : Nettoyage CSS ✅
 
-- [ ] **Séparer le rendering** — extraire `renderSvgPreview()`, `renderPreviews()`, `renderAppIcons()` dans un module `renderer.js`
-- [ ] **Séparer l'export** — extraire `generateKit()` et tout le ZIP dans `exporter.js`
-- [ ] **Séparer le storage** — extraire `saveConfig()`, `loadConfig()`, `getSavedConfigs()` dans `storage.js`
+- [x] **CSS custom properties** — `:root` avec 25+ variables (couleurs, borders, shadows, transitions, spacing)
+- [x] **Palette de couleurs cohérente** — toutes les couleurs passent par les variables
+- [x] **Couleurs hardcodées éliminées** — de ~150 à 14 (uniquement dans `:root`)
 
-### Priorité 4 : Features potentielles
+### Priorité 5 : Nettoyage JS ✅
+
+- [x] **Méthodes dupliquées supprimées** — `renderMultiLineText()`, `renderAppIcon()` supprimés de app.js
+- [x] **Console.log de debug supprimés** — code plus propre
+- [x] **app.js réduit** — de 1893 à 1723 lignes (-170 lignes)
+
+---
+
+## Ce qui reste à faire
+
+### Priorité 6 : Organisation CSS 🟡
+
+21 sections dans un seul fichier, c'est gérable mais pas idéal.
+
+**Option A (simple) :** Garder un seul fichier mais mieux organisé avec les variables
+**Option B (clean) :** Splitter en fichiers :
+- `base.css` — reset, typography, variables
+- `layout.css` — container, header, main, sections
+- `components.css` — buttons, inputs, cards, modals
+- `popover.css` — font popover (c'est un gros morceau)
+
+### Priorité 7 : Fonts externes 🟢
+
+~100 fonts hardcodées dans un `<select>` caché dans le HTML.
+
+**À faire (optionnel) :**
+- [ ] **Externaliser dans `fonts.json`** — liste des fonts par catégorie
+- [ ] **Générer dynamiquement** — charger le JSON et construire le select
+
+---
+
+## Features potentielles (backlog)
 
 - [ ] **Export PNG direct** — sans passer par le ZIP, pour un usage rapide
 - [ ] **Presets de couleurs** — quelques palettes prédéfinies (noir/blanc, couleurs vives, pastels)
-- [ ] **Undo/Redo** — stocker l'historique des états (overkill mais cool)
+- [ ] **Undo/Redo** — stocker l'historique des états
 - [ ] **Import de config** — uploader un JSON pour restaurer une config
+- [ ] **Thème sombre** — pour l'interface elle-même
 
 ---
 
 ## Ce qu'on ne fera PAS
 
-- **Framework JS** — React/Vue/Svelte pour 4000 lignes, non merci
+- **Framework JS** — React/Vue/Svelte pour ce projet, non merci
 - **TypeScript** — overhead de setup pour un projet solo
+- **Bundler** — webpack/vite/parcel, c'est overkill ici
 - **Tests unitaires** — le ROI est pas là pour un outil visuel
 - **CI/CD** — c'est du HTML/JS statique, on push et c'est live
 - **Analytics** — on a dit "no data sent to server", on tient parole
@@ -112,11 +104,13 @@ Vanilla JS, vanilla CSS, pas de bundler. C'est un choix, pas un oubli.
 
 ---
 
-## Notes perso
+## Notes
 
-Le code est moche mais il marche. L'utilisateur s'en fout de la beauté du code, il veut son logo.
+Le code est propre et modulaire maintenant. Les prochaines améliorations sont du polish, pas de l'urgence.
 
-Refactoriser pour le plaisir = temps perdu.
-Refactoriser quand ça bloque = temps bien investi.
+Ordre recommandé :
+1. CSS variables (impact visuel nul, mais code plus maintenable)
+2. Supprimer doublons JS (réduire la taille de app.js)
+3. Split CSS si ça devient ingérable
 
-On est dans la catégorie "ça marche, on touche pas trop".
+Pas la peine de tout faire d'un coup. Un truc à la fois, quand t'as le temps.
