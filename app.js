@@ -2,18 +2,44 @@
 
 class BrandKitGenerator {
     constructor() {
-        // State
-        this.logoText = 'Brand';
-        this.letters = [];
+        // State - Multi-line support
+        this.lines = [
+            {
+                text: 'Brand',
+                letters: [],
+                fontSize: 100,      // % of baseFontSize
+                letterSpacing: 0
+            }
+        ];
         this.font = 'Montserrat';
         this.fontWeight = '700';
-        this.fontSize = 100;
-        this.letterSpacing = 0;
+        this.baseFontSize = 100;
+        this.lineSpacing = 10;
+        this.horizontalAlign = 'center'; // 'left', 'center', 'right'
         this.defaultColor = '#333333';
         this.bgType = 'transparent';
         this.bgColor = '#ffffff';
         this.layerOrder = 'right'; // 'right' = droite dessus, 'left' = gauche dessus
+        this.currentLineIndex = 0;
         this.currentLetterIndex = null;
+
+        // Compatibility getters/setters for single-line access
+        Object.defineProperty(this, 'logoText', {
+            get: () => this.lines[0]?.text || '',
+            set: (value) => { if (this.lines[0]) this.lines[0].text = value; }
+        });
+        Object.defineProperty(this, 'letters', {
+            get: () => this.lines[0]?.letters || [],
+            set: (value) => { if (this.lines[0]) this.lines[0].letters = value; }
+        });
+        Object.defineProperty(this, 'fontSize', {
+            get: () => this.baseFontSize,
+            set: (value) => { this.baseFontSize = value; }
+        });
+        Object.defineProperty(this, 'letterSpacing', {
+            get: () => this.lines[0]?.letterSpacing || 0,
+            set: (value) => { if (this.lines[0]) this.lines[0].letterSpacing = value; }
+        });
 
         // App icon settings
         this.appIconBg = '#ffffff';
@@ -86,6 +112,7 @@ class BrandKitGenerator {
         fontList.innerHTML = '';
 
         let currentCategory = '';
+        const firstLine = this.lines[0];
 
         this.fontData.forEach(font => {
             // Add category header if new category
@@ -109,18 +136,18 @@ class BrandKitGenerator {
             nameSpan.className = 'font-name';
             nameSpan.textContent = font.name;
 
-            // Logo preview (in this font) with colored letters
+            // Logo preview (in this font) with colored letters - show first line
             const previewSpan = document.createElement('span');
             previewSpan.className = 'font-preview';
             previewSpan.style.fontFamily = `"${font.name}", sans-serif`;
 
-            // Scale letter spacing proportionally (1.4rem ≈ 22px vs fontSize)
+            // Scale letter spacing proportionally (1.4rem ≈ 22px vs baseFontSize)
             const dropdownDisplaySize = 22;
-            const scaledSpacing = (this.letterSpacing / this.fontSize) * dropdownDisplaySize;
+            const scaledSpacing = (firstLine.letterSpacing / this.baseFontSize) * dropdownDisplaySize;
             previewSpan.style.letterSpacing = scaledSpacing + 'px';
 
-            // Create colored letter spans (inline, not inline-block to preserve letter-spacing)
-            this.letters.forEach((letter) => {
+            // Create colored letter spans for first line
+            firstLine.letters.forEach((letter) => {
                 const letterSpan = document.createElement('span');
                 letterSpan.textContent = letter.char;
                 letterSpan.style.color = letter.color || this.defaultColor;
@@ -139,18 +166,21 @@ class BrandKitGenerator {
     }
 
     updateFontPreviews() {
-        // Scale letter spacing proportionally (1.4rem ≈ 22px vs fontSize)
-        const dropdownDisplaySize = 22;
-        const scaledSpacing = (this.letterSpacing / this.fontSize) * dropdownDisplaySize;
+        const firstLine = this.lines[0];
+        if (!firstLine) return;
 
-        // Update all font previews with current logo text, colors, and spacing
+        // Scale letter spacing proportionally (1.4rem ≈ 22px vs baseFontSize)
+        const dropdownDisplaySize = 22;
+        const scaledSpacing = (firstLine.letterSpacing / this.baseFontSize) * dropdownDisplaySize;
+
+        // Update all font previews with first line text, colors, and spacing
         document.querySelectorAll('.font-option .font-preview').forEach(preview => {
             // Update letter spacing on container (scaled)
             preview.style.letterSpacing = scaledSpacing + 'px';
 
-            // Rebuild colored letter spans (inline to preserve letter-spacing)
+            // Rebuild colored letter spans for first line
             preview.innerHTML = '';
-            this.letters.forEach((letter) => {
+            firstLine.letters.forEach((letter) => {
                 const letterSpan = document.createElement('span');
                 letterSpan.textContent = letter.char;
                 letterSpan.style.color = letter.color || this.defaultColor;
@@ -196,16 +226,18 @@ class BrandKitGenerator {
             this.filterFontCards(e.target.value);
         });
 
-        // Letter spacing slider in popover
+        // Letter spacing slider in popover (controls first line)
         document.getElementById('popoverLetterSpacing').addEventListener('input', (e) => {
-            this.letterSpacing = parseInt(e.target.value);
-            document.getElementById('popoverLetterSpacingValue').textContent = `${this.letterSpacing}px`;
-            // Sync with main slider
-            document.getElementById('letterSpacing').value = this.letterSpacing;
-            document.getElementById('letterSpacingValue').textContent = `${this.letterSpacing}px`;
+            const spacing = parseInt(e.target.value);
+            if (this.lines[0]) {
+                this.lines[0].letterSpacing = spacing;
+            }
+            document.getElementById('popoverLetterSpacingValue').textContent = `${spacing}px`;
             // Update all previews in popover
             this.updatePopoverPreviews();
-            // Update main preview too
+            // Re-render line editors to sync slider values
+            this.renderLineEditors();
+            // Update main preview
             this.render();
         });
 
@@ -218,11 +250,14 @@ class BrandKitGenerator {
     }
 
     updatePopoverPreviews() {
+        const firstLine = this.lines[0];
+        if (!firstLine) return;
+
         // Scale letter spacing proportionally
         const cardDisplaySize = 29;
         const headerDisplaySize = 32;
-        const cardScaledSpacing = (this.letterSpacing / this.fontSize) * cardDisplaySize;
-        const headerScaledSpacing = (this.letterSpacing / this.fontSize) * headerDisplaySize;
+        const cardScaledSpacing = (firstLine.letterSpacing / this.baseFontSize) * cardDisplaySize;
+        const headerScaledSpacing = (firstLine.letterSpacing / this.baseFontSize) * headerDisplaySize;
 
         // Update header preview
         const headerPreview = document.getElementById('currentFontPreview');
@@ -240,14 +275,16 @@ class BrandKitGenerator {
         const popover = document.getElementById('fontPopover');
         const grid = document.getElementById('fontPopoverGrid');
         const searchInput = document.getElementById('fontSearchInput');
+        const firstLine = this.lines[0];
 
         // Update current font display
         document.getElementById('currentFontName').textContent = this.font;
         this.updateCurrentFontPreview();
 
-        // Sync letter spacing slider
-        document.getElementById('popoverLetterSpacing').value = this.letterSpacing;
-        document.getElementById('popoverLetterSpacingValue').textContent = `${this.letterSpacing}px`;
+        // Sync letter spacing slider with first line's spacing
+        const spacing = firstLine?.letterSpacing || 0;
+        document.getElementById('popoverLetterSpacing').value = spacing;
+        document.getElementById('popoverLetterSpacingValue').textContent = `${spacing}px`;
 
         // Build the grid of font cards
         this.buildFontPopoverGrid();
@@ -268,15 +305,18 @@ class BrandKitGenerator {
 
     updateCurrentFontPreview() {
         const preview = document.getElementById('currentFontPreview');
+        const firstLine = this.lines[0];
+        if (!firstLine) return;
+
         preview.style.fontFamily = `"${this.font}", sans-serif`;
 
-        // Scale letter spacing proportionally to display size (2rem ≈ 32px vs fontSize)
+        // Scale letter spacing proportionally to display size (2rem ≈ 32px vs baseFontSize)
         const displaySize = 32;
-        const scaledSpacing = (this.letterSpacing / this.fontSize) * displaySize;
+        const scaledSpacing = (firstLine.letterSpacing / this.baseFontSize) * displaySize;
         preview.style.letterSpacing = scaledSpacing + 'px';
         preview.innerHTML = '';
 
-        this.letters.forEach((letter) => {
+        firstLine.letters.forEach((letter) => {
             const span = document.createElement('span');
             span.textContent = letter.char;
             span.style.color = letter.color || this.defaultColor;
@@ -288,9 +328,12 @@ class BrandKitGenerator {
         const grid = document.getElementById('fontPopoverGrid');
         grid.innerHTML = '';
 
-        // Scale letter spacing proportionally to card preview size (1.8rem ≈ 29px vs fontSize)
+        const firstLine = this.lines[0];
+        if (!firstLine) return;
+
+        // Scale letter spacing proportionally to card preview size (1.8rem ≈ 29px vs baseFontSize)
         const cardDisplaySize = 29;
-        const scaledSpacing = (this.letterSpacing / this.fontSize) * cardDisplaySize;
+        const scaledSpacing = (firstLine.letterSpacing / this.baseFontSize) * cardDisplaySize;
 
         this.fontData.forEach(font => {
             const card = document.createElement('div');
@@ -302,13 +345,13 @@ class BrandKitGenerator {
             nameEl.className = 'font-card-name';
             nameEl.textContent = font.name;
 
-            // Preview with colored letters
+            // Preview with colored letters from first line
             const previewEl = document.createElement('div');
             previewEl.className = 'font-card-preview';
             previewEl.style.fontFamily = `"${font.name}", sans-serif`;
             previewEl.style.letterSpacing = scaledSpacing + 'px';
 
-            this.letters.forEach((letter) => {
+            firstLine.letters.forEach((letter) => {
                 const span = document.createElement('span');
                 span.textContent = letter.char;
                 span.style.color = letter.color || this.defaultColor;
@@ -383,34 +426,38 @@ class BrandKitGenerator {
     }
 
     bindEvents() {
-        // Text input
-        document.getElementById('logoText').addEventListener('input', (e) => {
-            this.logoText = e.target.value || 'Brand';
-            document.getElementById('tabTitle').textContent = this.logoText;
-            this.updateLetters();
-            this.updateFontPreviews();
-            this.render();
-        });
-
         // Font weight
         document.getElementById('fontWeight').addEventListener('change', (e) => {
             this.fontWeight = e.target.value;
             this.render();
         });
 
-        // Font size
-        document.getElementById('fontSize').addEventListener('input', (e) => {
-            this.fontSize = parseInt(e.target.value);
-            document.getElementById('fontSizeValue').textContent = `${this.fontSize}px`;
-            this.render();
-        });
+        // Base font size (global)
+        const baseFontSizeEl = document.getElementById('baseFontSize');
+        if (baseFontSizeEl) {
+            baseFontSizeEl.addEventListener('input', (e) => {
+                this.baseFontSize = parseInt(e.target.value);
+                document.getElementById('baseFontSizeValue').textContent = `${this.baseFontSize}px`;
+                this.render();
+            });
+        }
 
-        // Letter spacing
-        document.getElementById('letterSpacing').addEventListener('input', (e) => {
-            this.letterSpacing = parseInt(e.target.value);
-            document.getElementById('letterSpacingValue').textContent = `${this.letterSpacing}px`;
-            this.updateFontPreviews();
-            this.render();
+        // Line spacing (global)
+        const lineSpacingEl = document.getElementById('lineSpacing');
+        if (lineSpacingEl) {
+            lineSpacingEl.addEventListener('input', (e) => {
+                this.lineSpacing = parseInt(e.target.value);
+                document.getElementById('lineSpacingValue').textContent = `${this.lineSpacing}px`;
+                this.render();
+            });
+        }
+
+        // Horizontal alignment
+        document.querySelectorAll('input[name="horizontalAlign"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                this.horizontalAlign = e.target.value;
+                this.render();
+            });
         });
 
         // Default color
@@ -572,44 +619,198 @@ class BrandKitGenerator {
     }
 
     updateLetters() {
-        const oldLetters = [...this.letters];
-        this.letters = this.logoText.split('').map((char, index) => {
-            // Preserve custom color if letter exists at same position
+        // Update letters for all lines
+        this.lines.forEach((line) => {
+            const oldLetters = [...line.letters];
+            line.letters = line.text.split('').map((char, index) => {
+                // Preserve custom color if letter exists at same position
+                const oldLetter = oldLetters[index];
+                return {
+                    char,
+                    color: oldLetter && oldLetter.char === char ? oldLetter.color : null
+                };
+            });
+        });
+        this.renderLineEditors();
+    }
+
+    updateLineLetters(lineIndex) {
+        const line = this.lines[lineIndex];
+        if (!line) return;
+
+        const oldLetters = [...line.letters];
+        line.letters = line.text.split('').map((char, index) => {
             const oldLetter = oldLetters[index];
             return {
                 char,
                 color: oldLetter && oldLetter.char === char ? oldLetter.color : null
             };
         });
-        this.renderLetterButtons();
+        this.renderLineEditors();
     }
 
     updateLetterColors() {
-        this.letters.forEach(letter => {
-            if (!letter.color) {
-                letter.customColor = false;
-            }
+        this.lines.forEach(line => {
+            line.letters.forEach(letter => {
+                if (!letter.color) {
+                    letter.customColor = false;
+                }
+            });
         });
-        this.renderLetterButtons();
+        this.renderLineEditors();
     }
 
     renderLetterButtons() {
-        const container = document.getElementById('letterButtons');
-        container.innerHTML = '';
-
-        this.letters.forEach((letter, index) => {
-            const btn = document.createElement('button');
-            btn.className = 'letter-btn' + (letter.color ? ' has-custom-color' : '');
-            btn.textContent = letter.char;
-            btn.style.color = letter.color || this.defaultColor;
-            btn.addEventListener('click', () => this.openColorPicker(index));
-            container.appendChild(btn);
-        });
+        // Legacy - now handled by renderLineEditors
+        this.renderLineEditors();
     }
 
-    openColorPicker(index) {
-        this.currentLetterIndex = index;
-        const letter = this.letters[index];
+    renderLineEditors() {
+        const container = document.getElementById('linesEditor');
+        if (!container) return;
+
+        container.innerHTML = '';
+
+        this.lines.forEach((line, lineIndex) => {
+            const lineEl = document.createElement('div');
+            lineEl.className = 'line-editor';
+            lineEl.dataset.lineIndex = lineIndex;
+
+            // Line header with text input and remove button
+            const lineHeader = document.createElement('div');
+            lineHeader.className = 'line-editor-header';
+
+            const lineLabel = document.createElement('span');
+            lineLabel.className = 'line-label';
+            lineLabel.textContent = `Line ${lineIndex + 1}`;
+
+            const textInput = document.createElement('input');
+            textInput.type = 'text';
+            textInput.className = 'line-text-input';
+            textInput.value = line.text;
+            textInput.placeholder = 'Enter text...';
+            textInput.addEventListener('input', (e) => {
+                this.lines[lineIndex].text = e.target.value || 'Text';
+                this.updateLineLetters(lineIndex);
+                this.updateFontPreviews();
+                this.render();
+                // Update tab title with first line
+                if (lineIndex === 0) {
+                    document.getElementById('tabTitle').textContent = e.target.value || 'Brand';
+                }
+            });
+
+            lineHeader.appendChild(lineLabel);
+            lineHeader.appendChild(textInput);
+
+            // Remove button (only if more than 1 line)
+            if (this.lines.length > 1) {
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'line-remove-btn';
+                removeBtn.innerHTML = '×';
+                removeBtn.title = 'Remove line';
+                removeBtn.addEventListener('click', () => this.removeLine(lineIndex));
+                lineHeader.appendChild(removeBtn);
+            }
+
+            lineEl.appendChild(lineHeader);
+
+            // Line controls (size and spacing)
+            const lineControls = document.createElement('div');
+            lineControls.className = 'line-controls';
+
+            // Font size slider (%)
+            const sizeControl = document.createElement('div');
+            sizeControl.className = 'line-control';
+            sizeControl.innerHTML = `
+                <label>Size</label>
+                <input type="range" class="line-font-size" min="30" max="150" value="${line.fontSize}">
+                <span class="line-font-size-value">${line.fontSize}%</span>
+            `;
+            const sizeSlider = sizeControl.querySelector('.line-font-size');
+            const sizeValue = sizeControl.querySelector('.line-font-size-value');
+            sizeSlider.addEventListener('input', (e) => {
+                this.lines[lineIndex].fontSize = parseInt(e.target.value);
+                sizeValue.textContent = `${e.target.value}%`;
+                this.render();
+            });
+            lineControls.appendChild(sizeControl);
+
+            // Letter spacing slider
+            const spacingControl = document.createElement('div');
+            spacingControl.className = 'line-control';
+            spacingControl.innerHTML = `
+                <label>Spacing</label>
+                <input type="range" class="line-letter-spacing" min="-20" max="50" value="${line.letterSpacing}">
+                <span class="line-letter-spacing-value">${line.letterSpacing}px</span>
+            `;
+            const spacingSlider = spacingControl.querySelector('.line-letter-spacing');
+            const spacingValue = spacingControl.querySelector('.line-letter-spacing-value');
+            spacingSlider.addEventListener('input', (e) => {
+                this.lines[lineIndex].letterSpacing = parseInt(e.target.value);
+                spacingValue.textContent = `${e.target.value}px`;
+                this.updateFontPreviews();
+                this.render();
+            });
+            lineControls.appendChild(spacingControl);
+
+            lineEl.appendChild(lineControls);
+
+            // Letter buttons for color customization
+            const letterButtonsContainer = document.createElement('div');
+            letterButtonsContainer.className = 'letter-buttons';
+
+            line.letters.forEach((letter, letterIndex) => {
+                const btn = document.createElement('button');
+                btn.className = 'letter-btn' + (letter.color ? ' has-custom-color' : '');
+                btn.textContent = letter.char;
+                btn.style.color = letter.color || this.defaultColor;
+                btn.addEventListener('click', () => this.openColorPicker(letterIndex, lineIndex));
+                letterButtonsContainer.appendChild(btn);
+            });
+
+            lineEl.appendChild(letterButtonsContainer);
+            container.appendChild(lineEl);
+        });
+
+        // Add line button (max 3 lines)
+        if (this.lines.length < 3) {
+            const addLineBtn = document.createElement('button');
+            addLineBtn.className = 'add-line-btn';
+            addLineBtn.innerHTML = '+ Add line';
+            addLineBtn.addEventListener('click', () => this.addLine());
+            container.appendChild(addLineBtn);
+        }
+    }
+
+    addLine() {
+        if (this.lines.length >= 3) return;
+
+        this.lines.push({
+            text: 'Text',
+            letters: [{ char: 'T', color: null }, { char: 'e', color: null }, { char: 'x', color: null }, { char: 't', color: null }],
+            fontSize: 100,
+            letterSpacing: 0
+        });
+
+        this.renderLineEditors();
+        this.render();
+    }
+
+    removeLine(lineIndex) {
+        if (this.lines.length <= 1) return;
+
+        this.lines.splice(lineIndex, 1);
+        this.renderLineEditors();
+        this.render();
+    }
+
+    openColorPicker(letterIndex, lineIndex = 0) {
+        this.currentLetterIndex = letterIndex;
+        this.currentLineIndex = lineIndex;
+        const letter = this.lines[lineIndex]?.letters[letterIndex];
+        if (!letter) return;
+
         const color = letter.color || this.defaultColor;
         document.getElementById('modalLetter').textContent = letter.char;
         document.getElementById('letterColorPicker').value = color;
@@ -624,10 +825,13 @@ class BrandKitGenerator {
     }
 
     applyLetterColor() {
-        if (this.currentLetterIndex !== null) {
+        if (this.currentLetterIndex !== null && this.currentLineIndex !== null) {
             const color = document.getElementById('letterColorPicker').value;
-            this.letters[this.currentLetterIndex].color = color;
-            this.renderLetterButtons();
+            const line = this.lines[this.currentLineIndex];
+            if (line && line.letters[this.currentLetterIndex]) {
+                line.letters[this.currentLetterIndex].color = color;
+            }
+            this.renderLineEditors();
             this.updateFontPreviews();
             this.render();
         }
@@ -635,9 +839,12 @@ class BrandKitGenerator {
     }
 
     resetLetterColor() {
-        if (this.currentLetterIndex !== null) {
-            this.letters[this.currentLetterIndex].color = null;
-            this.renderLetterButtons();
+        if (this.currentLetterIndex !== null && this.currentLineIndex !== null) {
+            const line = this.lines[this.currentLineIndex];
+            if (line && line.letters[this.currentLetterIndex]) {
+                line.letters[this.currentLetterIndex].color = null;
+            }
+            this.renderLineEditors();
             this.updateFontPreviews();
             this.render();
         }
@@ -662,27 +869,44 @@ class BrandKitGenerator {
 
         const padding = 40;
 
-        // Use canvas to measure text dimensions (faster than loading font)
-        this.ctx.font = `${this.fontWeight} ${this.fontSize}px "${this.font}"`;
+        // Calculate dimensions for all lines
+        let maxLineWidth = 0;
+        let totalHeight = 0;
+        const lineMetrics = [];
 
-        let totalWidth = 0;
-        this.letters.forEach((letter, index) => {
-            totalWidth += this.ctx.measureText(letter.char).width;
-            if (index < this.letters.length - 1) {
-                totalWidth += this.letterSpacing;
+        this.lines.forEach((line, index) => {
+            const lineFontSize = (line.fontSize / 100) * this.baseFontSize;
+            this.ctx.font = `${this.fontWeight} ${lineFontSize}px "${this.font}"`;
+
+            let lineWidth = 0;
+            line.letters.forEach((letter, i) => {
+                lineWidth += this.ctx.measureText(letter.char).width;
+                if (i < line.letters.length - 1) {
+                    lineWidth += line.letterSpacing;
+                }
+            });
+
+            maxLineWidth = Math.max(maxLineWidth, lineWidth);
+            const lineHeight = lineFontSize * 1.2;
+            totalHeight += lineHeight;
+            if (index < this.lines.length - 1) {
+                totalHeight += this.lineSpacing;
             }
+
+            lineMetrics.push({ lineWidth, lineHeight, lineFontSize });
         });
 
-        const svgWidth = Math.max(totalWidth + padding * 2, 200);
-        const svgHeight = this.fontSize * 1.4 + padding * 2;
+        const svgWidth = Math.max(maxLineWidth + padding * 2, 200);
+        const svgHeight = totalHeight + padding * 2;
 
         // Set initial SVG size and show placeholder
         this.svgElement.setAttribute('width', svgWidth);
         this.svgElement.setAttribute('height', svgHeight);
         this.svgElement.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
 
-        // Show loading state only if font not cached
-        const cacheKey = `${this.font}:${this.fontWeight}:${this.logoText}`;
+        // Get all text for cache key
+        const allText = this.lines.map(l => l.text).join('');
+        const cacheKey = `${this.font}:${this.fontWeight}:${allText}`;
         if (!this.opentypeFont || this.fontCacheKey !== cacheKey) {
             this.svgElement.innerHTML = this.bgType === 'color'
                 ? `<rect width="100%" height="100%" fill="${this.bgColor}"/><text x="50%" y="50%" text-anchor="middle" fill="#999" font-size="14">Loading...</text>`
@@ -694,22 +918,30 @@ class BrandKitGenerator {
         try {
             const font = await this.getOpentypeFont();
 
-            // Re-measure with opentype for accurate SVG positioning
-            let x = padding;
-            const positions = [];
+            // Recalculate with opentype for accurate SVG
+            let maxOpentypeWidth = 0;
+            const linesData = [];
 
-            this.letters.forEach((letter, index) => {
-                const glyph = font.charToGlyph(letter.char);
-                const width = glyph.advanceWidth * (this.fontSize / font.unitsPerEm);
-                positions.push({ letter, x, width });
-                x += width + this.letterSpacing;
+            this.lines.forEach((line, lineIndex) => {
+                const lineFontSize = (line.fontSize / 100) * this.baseFontSize;
+                const positions = [];
+                let x = 0;
+
+                line.letters.forEach((letter) => {
+                    const glyph = font.charToGlyph(letter.char);
+                    const width = glyph.advanceWidth * (lineFontSize / font.unitsPerEm);
+                    positions.push({ letter, x, width, lineFontSize });
+                    x += width + line.letterSpacing;
+                });
+
+                const lineWidth = positions.length > 0
+                    ? positions[positions.length - 1].x + positions[positions.length - 1].width
+                    : 0;
+                maxOpentypeWidth = Math.max(maxOpentypeWidth, lineWidth);
+                linesData.push({ positions, lineWidth, lineFontSize, lineHeight: lineMetrics[lineIndex].lineHeight });
             });
 
-            // Recalculate total width with opentype measurements
-            const opentypeTotalWidth = positions.length > 0
-                ? positions[positions.length - 1].x + positions[positions.length - 1].width - padding
-                : 0;
-            const finalSvgWidth = Math.max(opentypeTotalWidth + padding * 2, 200);
+            const finalSvgWidth = Math.max(maxOpentypeWidth + padding * 2, 200);
 
             // Build SVG content
             let svgContent = '';
@@ -719,16 +951,34 @@ class BrandKitGenerator {
                 svgContent += `<rect width="100%" height="100%" fill="${this.bgColor}"/>`;
             }
 
-            // Y position (baseline)
-            const y = padding + this.fontSize;
+            // Draw each line
+            let currentY = padding;
+            linesData.forEach((lineData) => {
+                const { positions, lineWidth, lineFontSize, lineHeight } = lineData;
 
-            // Draw letters in correct order
-            const drawOrder = this.layerOrder === 'left' ? [...positions].reverse() : positions;
-            drawOrder.forEach(({ letter, x }) => {
-                const color = letter.color || this.defaultColor;
-                const path = font.getPath(letter.char, x, y, this.fontSize);
-                const pathData = path.toPathData(2);
-                svgContent += `<path d="${pathData}" fill="${color}"/>`;
+                // Calculate X offset based on alignment
+                let xOffset;
+                if (this.horizontalAlign === 'left') {
+                    xOffset = padding;
+                } else if (this.horizontalAlign === 'right') {
+                    xOffset = finalSvgWidth - padding - lineWidth;
+                } else {
+                    // center
+                    xOffset = (finalSvgWidth - lineWidth) / 2;
+                }
+
+                const y = currentY + lineFontSize;
+
+                // Draw letters in correct order
+                const drawOrder = this.layerOrder === 'left' ? [...positions].reverse() : positions;
+                drawOrder.forEach(({ letter, x, lineFontSize: fontSize }) => {
+                    const color = letter.color || this.defaultColor;
+                    const path = font.getPath(letter.char, xOffset + x, y, fontSize);
+                    const pathData = path.toPathData(2);
+                    svgContent += `<path d="${pathData}" fill="${color}"/>`;
+                });
+
+                currentY += lineHeight + this.lineSpacing;
             });
 
             // Update SVG element
@@ -738,7 +988,6 @@ class BrandKitGenerator {
 
         } catch (error) {
             console.error('Error rendering SVG preview:', error);
-            // Fallback to canvas-based text
             this.svgElement.innerHTML = this.bgType === 'color'
                 ? `<rect width="100%" height="100%" fill="${this.bgColor}"/><text x="50%" y="50%" text-anchor="middle" fill="#f00" font-size="12">Loading error</text>`
                 : `<text x="50%" y="50%" text-anchor="middle" fill="#f00" font-size="12">Loading error</text>`;
@@ -774,55 +1023,97 @@ class BrandKitGenerator {
                 ctx.fillRect(0, 0, preview.displaySize, preview.displaySize);
             }
 
-            // Calculate font size to fit
-            const text = this.logoText;
-            let testFontSize = preview.displaySize * 0.8;
-            ctx.font = `${this.fontWeight} ${testFontSize}px "${this.font}"`;
+            // Render multi-line text
+            this.renderMultiLineText(ctx, preview.displaySize);
+        });
+    }
 
-            // Measure and adjust
-            let textWidth = 0;
-            this.letters.forEach((letter, index) => {
-                textWidth += ctx.measureText(letter.char).width;
-                if (index < this.letters.length - 1) {
-                    textWidth += (this.letterSpacing * testFontSize / this.fontSize);
+    // Helper method to render multi-line text on a canvas
+    renderMultiLineText(ctx, size, padding = 0.075) {
+        const paddingPx = size * padding;
+        const availableSize = size - paddingPx * 2;
+
+        // Calculate dimensions for all lines at base size
+        let maxLineWidth = 0;
+        let totalHeight = 0;
+        const lineMetrics = [];
+
+        this.lines.forEach((line, index) => {
+            const lineFontSize = (line.fontSize / 100) * this.baseFontSize;
+            ctx.font = `${this.fontWeight} ${lineFontSize}px "${this.font}"`;
+
+            let lineWidth = 0;
+            line.letters.forEach((letter, i) => {
+                lineWidth += ctx.measureText(letter.char).width;
+                if (i < line.letters.length - 1) {
+                    lineWidth += line.letterSpacing;
                 }
             });
 
-            const scale = Math.min(
-                (preview.displaySize * 0.85) / textWidth,
-                (preview.displaySize * 0.85) / testFontSize
-            );
-            const finalFontSize = testFontSize * scale;
-            const scaledSpacing = this.letterSpacing * finalFontSize / this.fontSize;
+            maxLineWidth = Math.max(maxLineWidth, lineWidth);
+            const lineHeight = lineFontSize * 1.1;
+            totalHeight += lineHeight;
+            if (index < this.lines.length - 1) {
+                totalHeight += this.lineSpacing;
+            }
 
-            ctx.font = `${this.fontWeight} ${finalFontSize}px "${this.font}"`;
-            ctx.textBaseline = 'middle';
+            lineMetrics.push({ lineWidth, lineHeight, lineFontSize, line });
+        });
 
-            // Recalculate width with final font
-            textWidth = 0;
-            this.letters.forEach((letter, index) => {
-                textWidth += ctx.measureText(letter.char).width;
-                if (index < this.letters.length - 1) {
-                    textWidth += scaledSpacing;
+        // Calculate scale to fit
+        const scaleX = availableSize / maxLineWidth;
+        const scaleY = availableSize / totalHeight;
+        const scale = Math.min(scaleX, scaleY, 1);
+
+        // Recalculate with scaled dimensions
+        const scaledTotalHeight = totalHeight * scale;
+        let startY = (size - scaledTotalHeight) / 2;
+
+        // Draw each line
+        lineMetrics.forEach(({ lineWidth, lineHeight, lineFontSize, line }) => {
+            const scaledFontSize = lineFontSize * scale;
+            const scaledLineHeight = lineHeight * scale;
+            const scaledLineSpacing = this.lineSpacing * scale;
+
+            ctx.font = `${this.fontWeight} ${scaledFontSize}px "${this.font}"`;
+            ctx.textBaseline = 'top';
+
+            // Recalculate line width with scaled font
+            let scaledLineWidth = 0;
+            const scaledLetterSpacing = line.letterSpacing * scale;
+            line.letters.forEach((letter, i) => {
+                scaledLineWidth += ctx.measureText(letter.char).width;
+                if (i < line.letters.length - 1) {
+                    scaledLineWidth += scaledLetterSpacing;
                 }
             });
 
-            const y = preview.displaySize / 2;
+            // Calculate X position based on alignment
+            let x;
+            if (this.horizontalAlign === 'left') {
+                x = paddingPx;
+            } else if (this.horizontalAlign === 'right') {
+                x = size - paddingPx - scaledLineWidth;
+            } else {
+                // center
+                x = (size - scaledLineWidth) / 2;
+            }
 
-            // Calculate all positions first
+            // Calculate positions for all letters
             const positions = [];
-            let x = (preview.displaySize - textWidth) / 2;
-            this.letters.forEach((letter) => {
+            line.letters.forEach((letter) => {
                 positions.push({ letter, x });
-                x += ctx.measureText(letter.char).width + scaledSpacing;
+                x += ctx.measureText(letter.char).width + scaledLetterSpacing;
             });
 
-            // Draw in order based on layerOrder option
+            // Draw in correct layer order
             const drawOrder = this.layerOrder === 'left' ? [...positions].reverse() : positions;
             drawOrder.forEach(({ letter, x }) => {
                 ctx.fillStyle = letter.color || this.defaultColor;
-                ctx.fillText(letter.char, x, y);
+                ctx.fillText(letter.char, x, startY);
             });
+
+            startY += scaledLineHeight + scaledLineSpacing;
         });
     }
 
@@ -865,57 +1156,8 @@ class BrandKitGenerator {
         ctx.roundRect(0, 0, size, size, radius);
         ctx.clip();
 
-        // Draw logo text centered
-        const padding = size * 0.15;
-        const availableSize = size - padding * 2;
-
-        // Calculate font size to fit
-        let testFontSize = availableSize * 0.6;
-        ctx.font = `${this.fontWeight} ${testFontSize}px "${this.font}"`;
-
-        let textWidth = 0;
-        this.letters.forEach((letter, index) => {
-            textWidth += ctx.measureText(letter.char).width;
-            if (index < this.letters.length - 1) {
-                textWidth += (this.letterSpacing * testFontSize / this.fontSize);
-            }
-        });
-
-        const scale = Math.min(
-            availableSize / textWidth,
-            availableSize * 0.7 / testFontSize
-        );
-        const finalFontSize = testFontSize * scale;
-        const scaledSpacing = this.letterSpacing * finalFontSize / this.fontSize;
-
-        ctx.font = `${this.fontWeight} ${finalFontSize}px "${this.font}"`;
-        ctx.textBaseline = 'middle';
-
-        // Recalculate width
-        textWidth = 0;
-        this.letters.forEach((letter, index) => {
-            textWidth += ctx.measureText(letter.char).width;
-            if (index < this.letters.length - 1) {
-                textWidth += scaledSpacing;
-            }
-        });
-
-        const y = size / 2;
-
-        // Calculate all positions first
-        const positions = [];
-        let x = (size - textWidth) / 2;
-        this.letters.forEach((letter) => {
-            positions.push({ letter, x });
-            x += ctx.measureText(letter.char).width + scaledSpacing;
-        });
-
-        // Draw in order based on layerOrder option
-        const drawOrder = this.layerOrder === 'left' ? [...positions].reverse() : positions;
-        drawOrder.forEach(({ letter, x }) => {
-            ctx.fillStyle = letter.color || this.defaultColor;
-            ctx.fillText(letter.char, x, y);
-        });
+        // Draw multi-line logo text
+        this.renderMultiLineText(ctx, size, 0.15);
 
         ctx.restore();
     }
@@ -933,53 +1175,8 @@ class BrandKitGenerator {
             ctx.fillRect(0, 0, size, size);
         }
 
-        // Calculate font size to fit
-        let testFontSize = size * 0.6;
-        ctx.font = `${this.fontWeight} ${testFontSize}px "${this.font}"`;
-
-        let textWidth = 0;
-        this.letters.forEach((letter, index) => {
-            textWidth += ctx.measureText(letter.char).width;
-            if (index < this.letters.length - 1) {
-                textWidth += (this.letterSpacing * testFontSize / this.fontSize);
-            }
-        });
-
-        const scale = Math.min(
-            (size * 0.85) / textWidth,
-            (size * 0.7) / testFontSize
-        );
-        const finalFontSize = testFontSize * scale;
-        const scaledSpacing = this.letterSpacing * finalFontSize / this.fontSize;
-
-        ctx.font = `${this.fontWeight} ${finalFontSize}px "${this.font}"`;
-        ctx.textBaseline = 'middle';
-
-        // Recalculate
-        textWidth = 0;
-        this.letters.forEach((letter, index) => {
-            textWidth += ctx.measureText(letter.char).width;
-            if (index < this.letters.length - 1) {
-                textWidth += scaledSpacing;
-            }
-        });
-
-        const y = size / 2;
-
-        // Calculate all positions first
-        const positions = [];
-        let x = (size - textWidth) / 2;
-        this.letters.forEach((letter) => {
-            positions.push({ letter, x });
-            x += ctx.measureText(letter.char).width + scaledSpacing;
-        });
-
-        // Draw in order based on layerOrder option
-        const drawOrder = this.layerOrder === 'left' ? [...positions].reverse() : positions;
-        drawOrder.forEach(({ letter, x }) => {
-            ctx.fillStyle = letter.color || this.defaultColor;
-            ctx.fillText(letter.char, x, y);
-        });
+        // Render multi-line text
+        this.renderMultiLineText(ctx, size, 0.075);
 
         return canvas;
     }
@@ -1015,52 +1212,8 @@ class BrandKitGenerator {
         ctx.roundRect(0, 0, size, size, radius);
         ctx.clip();
 
-        // Draw logo text centered
-        const padding = size * 0.15;
-        const availableSize = size - padding * 2;
-
-        let testFontSize = availableSize * 0.6;
-        ctx.font = `${this.fontWeight} ${testFontSize}px "${this.font}"`;
-
-        let textWidth = 0;
-        this.letters.forEach((letter, index) => {
-            textWidth += ctx.measureText(letter.char).width;
-            if (index < this.letters.length - 1) {
-                textWidth += (this.letterSpacing * testFontSize / this.fontSize);
-            }
-        });
-
-        const scale = Math.min(
-            availableSize / textWidth,
-            availableSize * 0.7 / testFontSize
-        );
-        const finalFontSize = testFontSize * scale;
-        const scaledSpacing = this.letterSpacing * finalFontSize / this.fontSize;
-
-        ctx.font = `${this.fontWeight} ${finalFontSize}px "${this.font}"`;
-        ctx.textBaseline = 'middle';
-
-        textWidth = 0;
-        this.letters.forEach((letter, index) => {
-            textWidth += ctx.measureText(letter.char).width;
-            if (index < this.letters.length - 1) {
-                textWidth += scaledSpacing;
-            }
-        });
-
-        const y = size / 2;
-        const positions = [];
-        let x = (size - textWidth) / 2;
-        this.letters.forEach((letter) => {
-            positions.push({ letter, x });
-            x += ctx.measureText(letter.char).width + scaledSpacing;
-        });
-
-        const drawOrder = this.layerOrder === 'left' ? [...positions].reverse() : positions;
-        drawOrder.forEach(({ letter, x }) => {
-            ctx.fillStyle = letter.color || this.defaultColor;
-            ctx.fillText(letter.char, x, y);
-        });
+        // Draw multi-line logo text
+        this.renderMultiLineText(ctx, size, 0.15);
 
         ctx.restore();
         return canvas;
@@ -1098,9 +1251,10 @@ class BrandKitGenerator {
 
     async fetchAndDecompressFont() {
         // Get font URL from Google Fonts CSS
-        // Add text parameter with our logo text to ensure those glyphs are included
+        // Add text parameter with all logo text to ensure those glyphs are included
         const fontFamily = this.font.replace(/ /g, '+');
-        const textParam = encodeURIComponent(this.logoText);
+        const allText = this.lines.map(l => l.text).join('');
+        const textParam = encodeURIComponent(allText);
         // Request specific weight explicitly
         const cssUrl = `https://fonts.googleapis.com/css2?family=${fontFamily}:wght@${this.fontWeight}&text=${textParam}&display=swap`;
 
@@ -1137,7 +1291,8 @@ class BrandKitGenerator {
 
     // Get cached opentype font or load it
     async getOpentypeFont() {
-        const cacheKey = `${this.font}:${this.fontWeight}:${this.logoText}`;
+        const allText = this.lines.map(l => l.text).join('');
+        const cacheKey = `${this.font}:${this.fontWeight}:${allText}`;
 
         // Return cached font if valid
         if (this.opentypeFont && this.fontCacheKey === cacheKey) {
@@ -1191,28 +1346,41 @@ class BrandKitGenerator {
         const font = await this.getOpentypeFont();
         console.log('Using font:', font.names.fullName);
 
-        // Use same padding as preview (40) for consistency
         const padding = 40;
 
-        // Calculate positions using opentype.js (same as preview)
-        let x = padding;
-        const positions = [];
+        // Calculate dimensions for all lines
+        let maxLineWidth = 0;
+        let totalHeight = 0;
+        const linesData = [];
 
-        this.letters.forEach((letter, index) => {
-            const glyph = font.charToGlyph(letter.char);
-            const width = glyph.advanceWidth * (this.fontSize / font.unitsPerEm);
-            positions.push({ letter, x, width });
-            x += width + this.letterSpacing;
+        this.lines.forEach((line, lineIndex) => {
+            const lineFontSize = (line.fontSize / 100) * this.baseFontSize;
+            const positions = [];
+            let x = 0;
+
+            line.letters.forEach((letter) => {
+                const glyph = font.charToGlyph(letter.char);
+                const width = glyph.advanceWidth * (lineFontSize / font.unitsPerEm);
+                positions.push({ letter, x, width, lineFontSize });
+                x += width + line.letterSpacing;
+            });
+
+            const lineWidth = positions.length > 0
+                ? positions[positions.length - 1].x + positions[positions.length - 1].width
+                : 0;
+            maxLineWidth = Math.max(maxLineWidth, lineWidth);
+
+            const lineHeight = lineFontSize * 1.2;
+            totalHeight += lineHeight;
+            if (lineIndex < this.lines.length - 1) {
+                totalHeight += this.lineSpacing;
+            }
+
+            linesData.push({ positions, lineWidth, lineFontSize, lineHeight });
         });
 
-        // Calculate total width
-        const totalWidth = positions.length > 0
-            ? positions[positions.length - 1].x + positions[positions.length - 1].width - padding
-            : 0;
-
-        const svgWidth = Math.ceil(Math.max(totalWidth + padding * 2, 200));
-        const svgHeight = Math.ceil(this.fontSize * 1.4 + padding * 2);
-        const y = padding + this.fontSize;
+        const svgWidth = Math.ceil(Math.max(maxLineWidth + padding * 2, 200));
+        const svgHeight = Math.ceil(totalHeight + padding * 2);
 
         // Build SVG
         let svgContent = `<?xml version="1.0" encoding="UTF-8"?>
@@ -1224,13 +1392,34 @@ class BrandKitGenerator {
             svgContent += `  <rect width="100%" height="100%" fill="${this.bgColor}"/>\n`;
         }
 
-        // Draw letters in correct order
-        const drawOrder = this.layerOrder === 'left' ? [...positions].reverse() : positions;
-        drawOrder.forEach(({ letter, x }) => {
-            const color = letter.color || this.defaultColor;
-            const path = font.getPath(letter.char, x, y, this.fontSize);
-            const pathData = path.toPathData(2);
-            svgContent += `  <path d="${pathData}" fill="${color}"/>\n`;
+        // Draw each line
+        let currentY = padding;
+        linesData.forEach((lineData) => {
+            const { positions, lineWidth, lineFontSize, lineHeight } = lineData;
+
+            // Calculate X offset based on alignment
+            let xOffset;
+            if (this.horizontalAlign === 'left') {
+                xOffset = padding;
+            } else if (this.horizontalAlign === 'right') {
+                xOffset = svgWidth - padding - lineWidth;
+            } else {
+                // center
+                xOffset = (svgWidth - lineWidth) / 2;
+            }
+
+            const y = currentY + lineFontSize;
+
+            // Draw letters in correct order
+            const drawOrder = this.layerOrder === 'left' ? [...positions].reverse() : positions;
+            drawOrder.forEach(({ letter, x, lineFontSize: fontSize }) => {
+                const color = letter.color || this.defaultColor;
+                const path = font.getPath(letter.char, xOffset + x, y, fontSize);
+                const pathData = path.toPathData(2);
+                svgContent += `  <path d="${pathData}" fill="${color}"/>\n`;
+            });
+
+            currentY += lineHeight + this.lineSpacing;
         });
 
         svgContent += `</svg>`;
@@ -1439,12 +1628,18 @@ Font:
 
     getConfigData() {
         return {
-            logoText: this.logoText,
-            letters: this.letters.map(l => ({ char: l.char, color: l.color })),
+            // New multi-line format
+            lines: this.lines.map(line => ({
+                text: line.text,
+                letters: line.letters.map(l => ({ char: l.char, color: l.color })),
+                fontSize: line.fontSize,
+                letterSpacing: line.letterSpacing
+            })),
             font: this.font,
             fontWeight: this.fontWeight,
-            fontSize: this.fontSize,
-            letterSpacing: this.letterSpacing,
+            baseFontSize: this.baseFontSize,
+            lineSpacing: this.lineSpacing,
+            horizontalAlign: this.horizontalAlign,
             defaultColor: this.defaultColor,
             bgType: this.bgType,
             bgColor: this.bgColor,
@@ -1452,7 +1647,12 @@ Font:
             appIconBg: this.appIconBg,
             appIconBorder: this.appIconBorder,
             appIconBorderEnabled: this.appIconBorderEnabled,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            // Legacy fields for backward compatibility
+            logoText: this.logoText,
+            letters: this.letters.map(l => ({ char: l.char, color: l.color })),
+            fontSize: this.baseFontSize,
+            letterSpacing: this.lines[0]?.letterSpacing || 0
         };
     }
 
@@ -1468,7 +1668,7 @@ Font:
         localStorage.setItem('brandkit_configs', JSON.stringify(configs));
 
         this.renderSavedConfigs();
-        this.showToast('Configuration sauvegardée');
+        this.showToast('Configuration saved');
     }
 
     getSavedConfigs() {
@@ -1494,7 +1694,7 @@ Font:
         const configs = this.getSavedConfigs();
 
         if (configs.length === 0) {
-            container.innerHTML = '<p class="no-configs">Aucune configuration sauvegardée</p>';
+            container.innerHTML = '<p class="no-configs">No saved configurations</p>';
             return;
         }
 
@@ -1546,13 +1746,34 @@ Font:
     }
 
     loadConfig(config) {
-        // Restore all settings
-        this.logoText = config.logoText;
-        this.letters = config.letters.map(l => ({ char: l.char, color: l.color }));
+        // Check if new multi-line format or legacy format
+        if (config.lines && Array.isArray(config.lines)) {
+            // New multi-line format
+            this.lines = config.lines.map(line => ({
+                text: line.text,
+                letters: line.letters.map(l => ({ char: l.char, color: l.color })),
+                fontSize: line.fontSize || 100,
+                letterSpacing: line.letterSpacing || 0
+            }));
+            this.baseFontSize = config.baseFontSize || 100;
+            this.lineSpacing = config.lineSpacing || 10;
+            this.horizontalAlign = config.horizontalAlign || 'center';
+        } else {
+            // Legacy single-line format - convert to new format
+            this.lines = [{
+                text: config.logoText || 'Brand',
+                letters: config.letters ? config.letters.map(l => ({ char: l.char, color: l.color })) : [],
+                fontSize: 100,
+                letterSpacing: config.letterSpacing || 0
+            }];
+            this.baseFontSize = config.fontSize || 100;
+            this.lineSpacing = 10;
+            this.horizontalAlign = 'center';
+        }
+
+        // Common settings
         this.font = config.font;
         this.fontWeight = config.fontWeight;
-        this.fontSize = config.fontSize;
-        this.letterSpacing = config.letterSpacing;
         this.defaultColor = config.defaultColor;
         this.bgType = config.bgType;
         this.bgColor = config.bgColor;
@@ -1562,16 +1783,20 @@ Font:
         this.appIconBorderEnabled = config.appIconBorderEnabled !== false;
 
         // Update UI controls
-        document.getElementById('logoText').value = this.logoText;
-        document.getElementById('tabTitle').textContent = this.logoText;
+        document.getElementById('tabTitle').textContent = this.lines[0]?.text || 'Brand';
         document.getElementById('fontDisplayText').textContent = this.font;
         document.getElementById('fontWeight').value = this.fontWeight;
-        document.getElementById('fontSize').value = this.fontSize;
-        document.getElementById('fontSizeValue').textContent = `${this.fontSize}px`;
-        document.getElementById('letterSpacing').value = this.letterSpacing;
-        document.getElementById('letterSpacingValue').textContent = `${this.letterSpacing}px`;
+        document.getElementById('baseFontSize').value = this.baseFontSize;
+        document.getElementById('baseFontSizeValue').textContent = `${this.baseFontSize}px`;
+        document.getElementById('lineSpacing').value = this.lineSpacing;
+        document.getElementById('lineSpacingValue').textContent = `${this.lineSpacing}px`;
         document.getElementById('defaultColor').value = this.defaultColor;
         document.getElementById('bgColor').value = this.bgColor;
+
+        // Horizontal align radio
+        document.querySelectorAll('input[name="horizontalAlign"]').forEach(radio => {
+            radio.checked = radio.value === this.horizontalAlign;
+        });
 
         // Background type radio
         document.querySelectorAll('input[name="bgType"]').forEach(radio => {
@@ -1594,13 +1819,13 @@ Font:
             opt.classList.toggle('selected', opt.dataset.font === this.font);
         });
 
-        // Update letter buttons and font previews
-        this.renderLetterButtons();
+        // Rebuild line editors and update previews
+        this.renderLineEditors();
         this.updateFontPreviews();
 
         // Render
         this.render();
-        this.showToast('Configuration chargée');
+        this.showToast('Configuration loaded');
     }
 
     deleteConfig(index) {
@@ -1608,7 +1833,7 @@ Font:
         configs.splice(index, 1);
         localStorage.setItem('brandkit_configs', JSON.stringify(configs));
         this.renderSavedConfigs();
-        this.showToast('Configuration supprimée');
+        this.showToast('Configuration deleted');
     }
 }
 
