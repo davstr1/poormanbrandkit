@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Poor Man's Brand Kit Maker</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>The Poor Man's Brand Kit Maker</h1>
+            <p>Create a good-enough logo and full brand kit for free — zero frills.</p>
+            <p class="philosophy">Let your logo be the boring thing about your brand.</p>
+        </header>
+
+        <main>
+            <!-- Editor Section -->
+            <section class="editor-section">
+                <h2>1. Create your logo</h2>
+
+                <div class="editor-controls">
+                    <div class="control-group">
+                        <label for="logoText">Logo text</label>
+                        <input type="text" id="logoText" value="Brand" placeholder="Enter your brand name">
+                    </div>
+
+                    <div class="control-group control-group-font">
+                        <label>Font</label>
+                        <div class="font-selector" id="fontSelector">
+                            <div class="font-selector-display" id="fontDisplay">
+                                <span id="fontDisplayText">Montserrat</span>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                            </div>
+                            <div class="font-dropdown" id="fontDropdown">
+                                <input type="text" id="fontSearch" placeholder="Search font..." autocomplete="off">
+                                <div class="font-list" id="fontList"></div>
+                            </div>
+                        </div>
+                        <select id="fontSelect" style="display:none">
+                            <!-- Modern Sans-Serif -->
+                            <optgroup label="Modern Sans-Serif">
+                                <option value="Roboto">Roboto</option>
+                                <option value="Open Sans">Open Sans</option>
+                                <option value="Montserrat" selected>Montserrat</option>
+                                <option value="Poppins">Poppins</option>
+                                <option value="Lato">Lato</option>
+                                <option value="Inter">Inter</option>
+                                <option value="Nunito">Nunito</option>
+                                <option value="Rubik">Rubik</option>
+                                <option value="Work Sans">Work Sans</option>
+                                <option value="DM Sans">DM Sans</option>
+                                <option value="Manrope">Manrope</option>
+                                <option value="Outfit">Outfit</option>
+                                <option value="Figtree">Figtree</option>
+                                <option value="Karla">Karla</option>
+                                <option value="Mulish">Mulish</option>
+                                <option value="Barlow">Barlow</option>
+                                <option value="Cabin">Cabin</option>
+                                <option value="Mukta">Mukta</option>
+                                <option value="Heebo">Heebo</option>
+                                <option value="Libre Franklin">Libre Franklin</option>
+                            </optgroup>
+
+                            <!-- Geometric Sans-Serif -->
+                            <optgroup label="Geometric Sans-Serif">
+                                <option value="Raleway">Raleway</option>
+                                <option value="Quicksand">Quicksand</option>
+                                <option value="Josefin Sans">Josefin Sans</option>
+                                <option value="Comfortaa">Comfortaa</option>
+                                <option value="Varela Round">Varela Round</option>
+                                <option value="Ubuntu">Ubuntu</option>
+                                <option value="Exo 2">Exo 2</option>
+                                <option value="Lexend">Lexend</option>
+                                <option value="Kanit">Kanit</option>
+                                <option value="Dosis">Dosis</option>
+                                <option value="Prompt">Prompt</option>
+                                <option value="Questrial">Questrial</option>
+                                <option value="ABeeZee">ABeeZee</option>
+                            </optgroup>
+
+                            <!-- Condensed Sans-Serif -->
+                            <optgroup label="Condensed Sans-Serif">
+                                <option value="Oswald">Oswald</option>
+                                <option value="Bebas Neue">Bebas Neue</option>
+                                <option value="Anton">Anton</option>
+                                <option value="Barlow Condensed">Barlow Condensed</option>
+                                <option value="Roboto Condensed">Roboto Condensed</option>
+                                <option value="PT Sans Narrow">PT Sans Narrow</option>
+                                <option value="Saira Condensed">Saira Condensed</option>
+                                <option value="Fjalla One">Fjalla One</option>
+                                <option value="Yanone Kaffeesatz">Yanone Kaffeesatz</option>
+                                <option value="Economica">Economica</option>
+                                <option value="Archivo Narrow">Archivo Narrow</option>
+                            </optgroup>
+
+                            <!-- Elegant Serif -->
+                            <optgroup label="Elegant Serif">
+                                <option value="Playfair Display">Playfair Display</option>
+                                <option value="Merriweather">Merriweather</option>
+                                <option value="Lora">Lora</option>
+                                <option value="Libre Baskerville">Libre Baskerville</option>
+                                <option value="Cormorant Garamond">Cormorant Garamond</option>
+                                <option value="EB Garamond">EB Garamond</option>
+                                <option value="PT Serif">PT Serif</option>
+                                <option value="Crimson Text">Crimson Text</option>
+                                <option value="Spectral">Spectral</option>
+                                <option value="Bitter">Bitter</option>
+                                <option value="Vollkorn">Vollkorn</option>
+                                <option value="Arvo">Arvo</option>
+                                <option value="Rokkitt">Rokkitt</option>
+                                <option value="Zilla Slab">Zilla Slab</option>
+                                <option value="Noto Serif">Noto Serif</option>
+                                <option value="Cardo">Cardo</option>
+                                <option value="Frank Ruhl Libre">Frank Ruhl Libre</option>
+                            </optgroup>
+
+                            <!-- Display Serif -->
+                            <optgroup label="Display Serif">
+                                <option value="Abril Fatface">Abril Fatface</option>
+                                <option value="Alfa Slab One">Alfa Slab One</option>
+                                <option value="Cinzel">Cinzel</option>
+                                <option value="Cormorant">Cormorant</option>
+                                <option value="DM Serif Display">DM Serif Display</option>
+                                <option value="Yeseva One">Yeseva One</option>
+                                <option value="Ultra">Ultra</option>
+                                <option value="Rozha One">Rozha One</option>
+                                <option value="Coustard">Coustard</option>
+                                <option value="Vidaloka">Vidaloka</option>
+                            </optgroup>
+
+                            <!-- Display / Title -->
+                            <optgroup label="Display / Title">
+                                <option value="Righteous">Righteous</option>
+                                <option value="Russo One">Russo One</option>
+                                <option value="Black Ops One">Black Ops One</option>
+                                <option value="Bungee">Bungee</option>
+                                <option value="Lilita One">Lilita One</option>
+                                <option value="Titan One">Titan One</option>
+                                <option value="Fredoka">Fredoka</option>
+                                <option value="Passion One">Passion One</option>
+                                <option value="Bree Serif">Bree Serif</option>
+                                <option value="Staatliches">Staatliches</option>
+                                <option value="Teko">Teko</option>
+                                <option value="Archivo Black">Archivo Black</option>
+                                <option value="Sigmar One">Sigmar One</option>
+                                <option value="Luckiest Guy">Luckiest Guy</option>
+                                <option value="Fugaz One">Fugaz One</option>
+                                <option value="Shrikhand">Shrikhand</option>
+                                <option value="Boogaloo">Boogaloo</option>
+                                <option value="Concert One">Concert One</option>
+                            </optgroup>
+
+                            <!-- Script -->
+                            <optgroup label="Script">
+                                <option value="Pacifico">Pacifico</option>
+                                <option value="Dancing Script">Dancing Script</option>
+                                <option value="Lobster">Lobster</option>
+                                <option value="Lobster Two">Lobster Two</option>
+                                <option value="Caveat">Caveat</option>
+                                <option value="Great Vibes">Great Vibes</option>
+                                <option value="Sacramento">Sacramento</option>
+                                <option value="Satisfy">Satisfy</option>
+                                <option value="Courgette">Courgette</option>
+                                <option value="Kaushan Script">Kaushan Script</option>
+                                <option value="Cookie">Cookie</option>
+                                <option value="Yellowtail">Yellowtail</option>
+                                <option value="Allura">Allura</option>
+                                <option value="Alex Brush">Alex Brush</option>
+                                <option value="Tangerine">Tangerine</option>
+                                <option value="Damion">Damion</option>
+                                <option value="Parisienne">Parisienne</option>
+                                <option value="Niconne">Niconne</option>
+                                <option value="Marck Script">Marck Script</option>
+                                <option value="Playball">Playball</option>
+                            </optgroup>
+
+                            <!-- Handwritten / Casual -->
+                            <optgroup label="Handwritten / Casual">
+                                <option value="Permanent Marker">Permanent Marker</option>
+                                <option value="Indie Flower">Indie Flower</option>
+                                <option value="Shadows Into Light">Shadows Into Light</option>
+                                <option value="Patrick Hand">Patrick Hand</option>
+                                <option value="Architects Daughter">Architects Daughter</option>
+                                <option value="Amatic SC">Amatic SC</option>
+                                <option value="Gloria Hallelujah">Gloria Hallelujah</option>
+                                <option value="Handlee">Handlee</option>
+                                <option value="Coming Soon">Coming Soon</option>
+                                <option value="Rock Salt">Rock Salt</option>
+                                <option value="Covered By Your Grace">Covered By Your Grace</option>
+                                <option value="Just Another Hand">Just Another Hand</option>
+                                <option value="Kalam">Kalam</option>
+                                <option value="Neucha">Neucha</option>
+                                <option value="Reenie Beanie">Reenie Beanie</option>
+                                <option value="Gochi Hand">Gochi Hand</option>
+                                <option value="Schoolbell">Schoolbell</option>
+                                <option value="Short Stack">Short Stack</option>
+                            </optgroup>
+
+                            <!-- Monospace / Tech -->
+                            <optgroup label="Monospace / Tech">
+                                <option value="Roboto Mono">Roboto Mono</option>
+                                <option value="Source Code Pro">Source Code Pro</option>
+                                <option value="Fira Code">Fira Code</option>
+                                <option value="JetBrains Mono">JetBrains Mono</option>
+                                <option value="Space Mono">Space Mono</option>
+                                <option value="IBM Plex Mono">IBM Plex Mono</option>
+                                <option value="Inconsolata">Inconsolata</option>
+                                <option value="Ubuntu Mono">Ubuntu Mono</option>
+                                <option value="Cousine">Cousine</option>
+                                <option value="PT Mono">PT Mono</option>
+                                <option value="Overpass Mono">Overpass Mono</option>
+                                <option value="Red Hat Mono">Red Hat Mono</option>
+                            </optgroup>
+
+                            <!-- Retro / Vintage -->
+                            <optgroup label="Retro / Vintage">
+                                <option value="Bangers">Bangers</option>
+                                <option value="Monoton">Monoton</option>
+                                <option value="Press Start 2P">Press Start 2P</option>
+                                <option value="VT323">VT323</option>
+                                <option value="Special Elite">Special Elite</option>
+                                <option value="Courier Prime">Courier Prime</option>
+                                <option value="Creepster">Creepster</option>
+                                <option value="Nosifer">Nosifer</option>
+                                <option value="Chewy">Chewy</option>
+                                <option value="Bungee Shade">Bungee Shade</option>
+                                <option value="Londrina Solid">Londrina Solid</option>
+                                <option value="Bowlby One">Bowlby One</option>
+                                <option value="Freckle Face">Freckle Face</option>
+                                <option value="Fontdiner Swanky">Fontdiner Swanky</option>
+                                <option value="Rubik Mono One">Rubik Mono One</option>
+                            </optgroup>
+
+                            <!-- Futuristic / Sci-Fi -->
+                            <optgroup label="Futuristic / Sci-Fi">
+                                <option value="Orbitron">Orbitron</option>
+                                <option value="Audiowide">Audiowide</option>
+                                <option value="Electrolize">Electrolize</option>
+                                <option value="Michroma">Michroma</option>
+                                <option value="Quantico">Quantico</option>
+                                <option value="Share Tech">Share Tech</option>
+                                <option value="Rajdhani">Rajdhani</option>
+                                <option value="Aldrich">Aldrich</option>
+                                <option value="Play">Play</option>
+                                <option value="Jura">Jura</option>
+                                <option value="Tilt Neon">Tilt Neon</option>
+                                <option value="Bruno Ace">Bruno Ace</option>
+                                <option value="Oxanium">Oxanium</option>
+                                <option value="Chakra Petch">Chakra Petch</option>
+                                <option value="Turret Road">Turret Road</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label for="fontWeight">Weight</label>
+                        <select id="fontWeight">
+                            <option value="300">Light</option>
+                            <option value="400">Regular</option>
+                            <option value="500">Medium</option>
+                            <option value="600">Semi-Bold</option>
+                            <option value="700" selected>Bold</option>
+                            <option value="800">Extra-Bold</option>
+                            <option value="900">Black</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label for="fontSize">Size</label>
+                        <input type="range" id="fontSize" min="40" max="200" value="100">
+                        <span id="fontSizeValue">100px</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label for="letterSpacing">Spacing</label>
+                        <input type="range" id="letterSpacing" min="-20" max="50" value="0">
+                        <span id="letterSpacingValue">0px</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label for="defaultColor">Default color</label>
+                        <input type="color" id="defaultColor" value="#333333">
+                    </div>
+
+                    <div class="control-group">
+                        <label>Layer order</label>
+                        <div class="bg-options">
+                            <label>
+                                <input type="radio" name="layerOrder" value="right" checked> Right on top
+                            </label>
+                            <label>
+                                <input type="radio" name="layerOrder" value="left"> Left on top
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label for="bgColor">Logo background</label>
+                        <div class="bg-options">
+                            <label>
+                                <input type="radio" name="bgType" value="transparent" checked> Transparent
+                            </label>
+                            <label>
+                                <input type="radio" name="bgType" value="color"> Color
+                            </label>
+                            <input type="color" id="bgColor" value="#ffffff" disabled>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Letter Editor -->
+                <div class="letter-editor">
+                    <h3>Customize each letter</h3>
+                    <p class="hint">Click on a letter to change its color</p>
+                    <div id="letterButtons" class="letter-buttons"></div>
+                </div>
+
+                <!-- Saved Configurations -->
+                <div class="saved-configs">
+                    <div class="saved-configs-header">
+                        <h3>Saved configurations</h3>
+                        <button id="saveConfigBtn" class="btn-save" title="Save current configuration">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                                <polyline points="7 3 7 8 15 8"></polyline>
+                            </svg>
+                            Save
+                        </button>
+                    </div>
+                    <div id="savedConfigsList" class="saved-configs-list">
+                        <p class="no-configs">No saved configurations</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Preview Section -->
+            <section class="preview-section">
+                <h2>2. Preview</h2>
+
+                <div class="preview-container">
+                    <div class="preview-main">
+                        <div class="preview-bg-toggle">
+                            <button class="bg-toggle active" data-bg="light">Light</button>
+                            <button class="bg-toggle" data-bg="dark">Dark</button>
+                            <button class="bg-toggle" data-bg="checker">Checker</button>
+                        </div>
+                        <div id="mainPreview" class="main-preview light">
+                            <svg id="logoSvg" xmlns="http://www.w3.org/2000/svg"></svg>
+                            <canvas id="logoCanvas" style="display: none;"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="preview-sizes">
+                        <h3>Multi-size preview</h3>
+                        <div class="size-previews">
+                            <div class="size-preview">
+                                <canvas id="preview512" width="128" height="128"></canvas>
+                                <span>512px</span>
+                            </div>
+                            <div class="size-preview">
+                                <canvas id="preview256" width="64" height="64"></canvas>
+                                <span>256px</span>
+                            </div>
+                            <div class="size-preview">
+                                <canvas id="preview128" width="32" height="32"></canvas>
+                                <span>128px</span>
+                            </div>
+                            <div class="size-preview">
+                                <canvas id="preview64" width="32" height="32"></canvas>
+                                <span>64px</span>
+                            </div>
+                            <div class="size-preview">
+                                <canvas id="preview32" width="32" height="32"></canvas>
+                                <span>32px</span>
+                            </div>
+                            <div class="size-preview">
+                                <canvas id="preview16" width="16" height="16"></canvas>
+                                <span>16px</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="favicon-preview">
+                        <h3>Favicon preview</h3>
+                        <div class="browser-tab">
+                            <div class="tab-bar">
+                                <div class="tab active">
+                                    <canvas id="faviconPreview" width="16" height="16"></canvas>
+                                    <span id="tabTitle">Brand</span>
+                                </div>
+                                <div class="tab">
+                                    <span>+</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="app-icon-preview">
+                        <h3>App Store icon</h3>
+                        <div class="app-icon-controls">
+                            <div class="app-icon-control">
+                                <label for="appIconBg">Background</label>
+                                <input type="color" id="appIconBg" value="#ffffff">
+                            </div>
+                            <div class="app-icon-control">
+                                <label for="appIconBorder">Border</label>
+                                <input type="color" id="appIconBorder" value="#e0e0e0">
+                            </div>
+                            <div class="app-icon-control">
+                                <label>
+                                    <input type="checkbox" id="appIconBorderEnabled" checked>
+                                    Show border
+                                </label>
+                            </div>
+                        </div>
+                        <div class="app-icon-previews">
+                            <div class="app-icon-item">
+                                <canvas id="appIconIOS" width="120" height="120"></canvas>
+                                <span>iOS</span>
+                            </div>
+                            <div class="app-icon-item">
+                                <canvas id="appIconAndroid" width="120" height="120"></canvas>
+                                <span>Android</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Export Section -->
+            <section class="export-section">
+                <h2>3. Download your Kit</h2>
+                <p>Automatically generates all required formats:</p>
+                <ul class="export-list">
+                    <li>✓ Logos (1024px, 512px, 256px, 128px)</li>
+                    <li>✓ Web favicons (16px, 32px, 48px, 180px)</li>
+                    <li>✓ iOS App Store icons</li>
+                    <li>✓ Android / Google Play icons</li>
+                </ul>
+                <button id="generateBtn" class="generate-btn">
+                    <span class="btn-text">Generate Kit</span>
+                    <span class="btn-loading" style="display: none;">Generating...</span>
+                </button>
+                <div id="progressBar" class="progress-bar" style="display: none;">
+                    <div class="progress-fill"></div>
+                    <span class="progress-text">0%</span>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>The Poor Man's Brand Kit Maker — No data is sent to any server</p>
+        </footer>
+    </div>
+
+    <!-- Color picker modal -->
+    <div id="colorModal" class="modal">
+        <div class="modal-content">
+            <h3>Color for letter "<span id="modalLetter"></span>"</h3>
+            <div class="color-picker-row">
+                <input type="color" id="letterColorPicker" value="#333333">
+                <div class="hex-input-group">
+                    <input type="text" id="hexInput" value="#333333" maxlength="7" placeholder="#000000">
+                    <div class="btn-row">
+                        <button id="copyHex" class="btn-icon" title="Copy color code">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                        </button>
+                        <button id="pasteHex" class="btn-icon" title="Paste color code">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                                <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div id="clipboardColor" class="clipboard-color" style="display: none;">
+                <span>Clipboard:</span>
+                <span id="clipboardPreview" class="color-preview"></span>
+                <span id="clipboardHex"></span>
+            </div>
+            <div class="modal-buttons">
+                <button id="applyColor" class="btn-primary">Apply</button>
+                <button id="resetColor" class="btn-secondary">Reset</button>
+                <button id="closeModal" class="btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fullscreen font picker popover -->
+    <div id="fontPopover" class="font-popover">
+        <div class="font-popover-header">
+            <div class="font-popover-title">
+                <h2>Choose a font</h2>
+                <button id="closeFontPopover" class="btn-close" title="Close">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="font-popover-current">
+                <span class="current-label">Current font: <strong id="currentFontName">Montserrat</strong></span>
+                <div id="currentFontPreview" class="current-preview"></div>
+            </div>
+            <div class="font-popover-controls">
+                <div class="font-popover-search">
+                    <input type="text" id="fontSearchInput" placeholder="Search font...">
+                </div>
+                <div class="font-popover-spacing">
+                    <label for="popoverLetterSpacing">Spacing</label>
+                    <input type="range" id="popoverLetterSpacing" min="-20" max="50" value="0">
+                    <span id="popoverLetterSpacingValue">0px</span>
+                </div>
+            </div>
+        </div>
+        <div class="font-popover-grid" id="fontPopoverGrid">
+            <!-- Grid generated dynamically -->
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
