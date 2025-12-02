@@ -1,6 +1,76 @@
 // The Poor Man's Brand Kit Maker - Main Application
 
+// ==================== CONFIGURATION ====================
+const CONFIG = {
+    // Maximum number of text lines
+    MAX_LINES: 3,
+
+    // Preview sizes (for UI display)
+    PREVIEW_SIZES: [
+        { id: 'preview512', size: 512, displaySize: 128 },
+        { id: 'preview256', size: 256, displaySize: 64 },
+        { id: 'preview128', size: 128, displaySize: 32 },
+        { id: 'preview64', size: 64, displaySize: 32 },
+        { id: 'preview32', size: 32, displaySize: 32 },
+        { id: 'preview16', size: 16, displaySize: 16 },
+        { id: 'faviconPreview', size: 16, displaySize: 16 }
+    ],
+
+    // Export sizes for brand kit ZIP
+    EXPORT: {
+        LOGO_SIZES: [1024, 512, 256, 128],
+        FAVICON_SIZES: [16, 32, 48, 180],
+        IOS_SIZES: [1024, 180, 167, 152, 120],
+        ANDROID_SIZES: [512, 192, 144, 96, 72, 48]
+    },
+
+    // App icon corner radius ratios
+    RADIUS: {
+        IOS: 0.2237,      // Apple standard (22.37%)
+        ANDROID: 0.15     // Material design
+    },
+
+    // Padding ratios for canvas rendering
+    PADDING: {
+        LOGO: 0.075,      // 7.5% padding for logos
+        APP_ICON: 0.15,   // 15% padding for app icons
+        SVG: 40           // Fixed padding in pixels for SVG
+    },
+
+    // Font preview display sizes (in pixels)
+    FONT_PREVIEW: {
+        DROPDOWN: 22,     // Size in dropdown list
+        CARD: 29,         // Size in popover cards
+        HEADER: 32        // Size in popover header
+    },
+
+    // Saved config preview size
+    SAVED_CONFIG_PREVIEW: 120,
+
+    // Default values
+    DEFAULTS: {
+        FONT: 'Montserrat',
+        FONT_WEIGHT: '700',
+        BASE_FONT_SIZE: 100,
+        LINE_SPACING: 10,
+        HORIZONTAL_ALIGN: 'center',
+        DEFAULT_COLOR: '#333333',
+        BG_TYPE: 'transparent',
+        BG_COLOR: '#ffffff',
+        LAYER_ORDER: 'right',
+        APP_ICON_BG: '#ffffff',
+        APP_ICON_BORDER: '#e0e0e0'
+    }
+};
+
+/**
+ * Main application class for generating brand kits.
+ * Handles multi-line logo creation, font management, and asset export.
+ */
 class BrandKitGenerator {
+    /**
+     * Initialize the brand kit generator with default state.
+     */
     constructor() {
         // State - Multi-line support
         this.lines = [
@@ -11,15 +81,15 @@ class BrandKitGenerator {
                 letterSpacing: 0
             }
         ];
-        this.font = 'Montserrat';
-        this.fontWeight = '700';
-        this.baseFontSize = 100;
-        this.lineSpacing = 10;
-        this.horizontalAlign = 'center'; // 'left', 'center', 'right'
-        this.defaultColor = '#333333';
-        this.bgType = 'transparent';
-        this.bgColor = '#ffffff';
-        this.layerOrder = 'right'; // 'right' = droite dessus, 'left' = gauche dessus
+        this.font = CONFIG.DEFAULTS.FONT;
+        this.fontWeight = CONFIG.DEFAULTS.FONT_WEIGHT;
+        this.baseFontSize = CONFIG.DEFAULTS.BASE_FONT_SIZE;
+        this.lineSpacing = CONFIG.DEFAULTS.LINE_SPACING;
+        this.horizontalAlign = CONFIG.DEFAULTS.HORIZONTAL_ALIGN;
+        this.defaultColor = CONFIG.DEFAULTS.DEFAULT_COLOR;
+        this.bgType = CONFIG.DEFAULTS.BG_TYPE;
+        this.bgColor = CONFIG.DEFAULTS.BG_COLOR;
+        this.layerOrder = CONFIG.DEFAULTS.LAYER_ORDER;
         this.currentLineIndex = 0;
         this.currentLetterIndex = null;
 
@@ -42,8 +112,8 @@ class BrandKitGenerator {
         });
 
         // App icon settings
-        this.appIconBg = '#ffffff';
-        this.appIconBorder = '#e0e0e0';
+        this.appIconBg = CONFIG.DEFAULTS.APP_ICON_BG;
+        this.appIconBorder = CONFIG.DEFAULTS.APP_ICON_BORDER;
         this.appIconBorderEnabled = true;
 
         // Font cache for opentype.js
@@ -60,6 +130,9 @@ class BrandKitGenerator {
         this.init();
     }
 
+    /**
+     * Initialize application: load fonts, setup UI, bind events, render.
+     */
     init() {
         this.loadGoogleFonts();
         this.setupFontSelector();
@@ -69,6 +142,9 @@ class BrandKitGenerator {
         this.render();
     }
 
+    /**
+     * Load Google Fonts from the hidden select element and build the font list UI.
+     */
     loadGoogleFonts() {
         // Get all font names from the hidden select element
         const select = document.getElementById('fontSelect');
@@ -141,9 +217,8 @@ class BrandKitGenerator {
             previewSpan.className = 'font-preview';
             previewSpan.style.fontFamily = `"${font.name}", sans-serif`;
 
-            // Scale letter spacing proportionally (1.4rem ≈ 22px vs baseFontSize)
-            const dropdownDisplaySize = 22;
-            const scaledSpacing = (firstLine.letterSpacing / this.baseFontSize) * dropdownDisplaySize;
+            // Scale letter spacing proportionally to dropdown display size
+            const scaledSpacing = (firstLine.letterSpacing / this.baseFontSize) * CONFIG.FONT_PREVIEW.DROPDOWN;
             previewSpan.style.letterSpacing = scaledSpacing + 'px';
 
             // Create colored letter spans for first line
@@ -169,9 +244,8 @@ class BrandKitGenerator {
         const firstLine = this.lines[0];
         if (!firstLine) return;
 
-        // Scale letter spacing proportionally (1.4rem ≈ 22px vs baseFontSize)
-        const dropdownDisplaySize = 22;
-        const scaledSpacing = (firstLine.letterSpacing / this.baseFontSize) * dropdownDisplaySize;
+        // Scale letter spacing proportionally to dropdown display size
+        const scaledSpacing = (firstLine.letterSpacing / this.baseFontSize) * CONFIG.FONT_PREVIEW.DROPDOWN;
 
         // Update all font previews with first line text, colors, and spacing
         document.querySelectorAll('.font-option .font-preview').forEach(preview => {
@@ -254,10 +328,8 @@ class BrandKitGenerator {
         if (!firstLine) return;
 
         // Scale letter spacing proportionally
-        const cardDisplaySize = 29;
-        const headerDisplaySize = 32;
-        const cardScaledSpacing = (firstLine.letterSpacing / this.baseFontSize) * cardDisplaySize;
-        const headerScaledSpacing = (firstLine.letterSpacing / this.baseFontSize) * headerDisplaySize;
+        const cardScaledSpacing = (firstLine.letterSpacing / this.baseFontSize) * CONFIG.FONT_PREVIEW.CARD;
+        const headerScaledSpacing = (firstLine.letterSpacing / this.baseFontSize) * CONFIG.FONT_PREVIEW.HEADER;
 
         // Update header preview
         const headerPreview = document.getElementById('currentFontPreview');
@@ -310,9 +382,8 @@ class BrandKitGenerator {
 
         preview.style.fontFamily = `"${this.font}", sans-serif`;
 
-        // Scale letter spacing proportionally to display size (2rem ≈ 32px vs baseFontSize)
-        const displaySize = 32;
-        const scaledSpacing = (firstLine.letterSpacing / this.baseFontSize) * displaySize;
+        // Scale letter spacing proportionally to header display size
+        const scaledSpacing = (firstLine.letterSpacing / this.baseFontSize) * CONFIG.FONT_PREVIEW.HEADER;
         preview.style.letterSpacing = scaledSpacing + 'px';
         preview.innerHTML = '';
 
@@ -331,9 +402,8 @@ class BrandKitGenerator {
         const firstLine = this.lines[0];
         if (!firstLine) return;
 
-        // Scale letter spacing proportionally to card preview size (1.8rem ≈ 29px vs baseFontSize)
-        const cardDisplaySize = 29;
-        const scaledSpacing = (firstLine.letterSpacing / this.baseFontSize) * cardDisplaySize;
+        // Scale letter spacing proportionally to card preview size
+        const scaledSpacing = (firstLine.letterSpacing / this.baseFontSize) * CONFIG.FONT_PREVIEW.CARD;
 
         this.fontData.forEach(font => {
             const card = document.createElement('div');
@@ -818,8 +888,8 @@ class BrandKitGenerator {
             container.appendChild(lineEl);
         });
 
-        // Add line button (max 3 lines)
-        if (this.lines.length < 3) {
+        // Add line button (max lines)
+        if (this.lines.length < CONFIG.MAX_LINES) {
             const addLineBtn = document.createElement('button');
             addLineBtn.className = 'add-line-btn';
             addLineBtn.innerHTML = '+ Add line';
@@ -829,7 +899,7 @@ class BrandKitGenerator {
     }
 
     addLine() {
-        if (this.lines.length >= 3) return;
+        if (this.lines.length >= CONFIG.MAX_LINES) return;
 
         this.lines.push({
             text: 'Text',
@@ -896,6 +966,31 @@ class BrandKitGenerator {
         this.closeModal();
     }
 
+    /**
+     * Get current state as an object for use by modules.
+     * @returns {Object} Current application state
+     */
+    getState() {
+        return {
+            lines: this.lines,
+            font: this.font,
+            fontWeight: this.fontWeight,
+            baseFontSize: this.baseFontSize,
+            lineSpacing: this.lineSpacing,
+            horizontalAlign: this.horizontalAlign,
+            defaultColor: this.defaultColor,
+            bgType: this.bgType,
+            bgColor: this.bgColor,
+            layerOrder: this.layerOrder,
+            appIconBg: this.appIconBg,
+            appIconBorder: this.appIconBorder,
+            appIconBorderEnabled: this.appIconBorderEnabled
+        };
+    }
+
+    /**
+     * Main render method: updates SVG preview, size previews, and app icons.
+     */
     render() {
         this.renderMainCanvas();
         this.renderPreviews();
@@ -908,11 +1003,15 @@ class BrandKitGenerator {
         this.renderSvgPreview();
     }
 
+    /**
+     * Render the main SVG preview using opentype.js for accurate font paths.
+     * @async
+     */
     async renderSvgPreview() {
         // Prevent concurrent renders
         if (this.fontLoading) return;
 
-        const padding = 40;
+        const padding = CONFIG.PADDING.SVG;
 
         // Calculate dimensions for all lines
         let maxLineWidth = 0;
@@ -1042,39 +1141,16 @@ class BrandKitGenerator {
     }
 
     renderPreviews() {
-        const previews = [
-            { id: 'preview512', size: 512, displaySize: 128 },
-            { id: 'preview256', size: 256, displaySize: 64 },
-            { id: 'preview128', size: 128, displaySize: 32 },
-            { id: 'preview64', size: 64, displaySize: 32 },
-            { id: 'preview32', size: 32, displaySize: 32 },
-            { id: 'preview16', size: 16, displaySize: 16 },
-            { id: 'faviconPreview', size: 16, displaySize: 16 }
-        ];
-
-        previews.forEach(preview => {
-            const canvas = document.getElementById(preview.id);
-            const ctx = canvas.getContext('2d');
-
-            canvas.width = preview.displaySize;
-            canvas.height = preview.displaySize;
-
-            // Clear
-            ctx.clearRect(0, 0, preview.displaySize, preview.displaySize);
-
-            // Draw background
-            if (this.bgType === 'color') {
-                ctx.fillStyle = this.bgColor;
-                ctx.fillRect(0, 0, preview.displaySize, preview.displaySize);
-            }
-
-            // Render multi-line text
-            this.renderMultiLineText(ctx, preview.displaySize);
-        });
+        Renderer.renderPreviews(this.getState());
     }
 
-    // Helper method to render multi-line text on a canvas
-    renderMultiLineText(ctx, size, padding = 0.075) {
+    /**
+     * Render multi-line text on a canvas with automatic scaling.
+     * @param {CanvasRenderingContext2D} ctx - Canvas 2D context
+     * @param {number} size - Canvas size in pixels
+     * @param {number} padding - Padding ratio (0-1)
+     */
+    renderMultiLineText(ctx, size, padding = CONFIG.PADDING.LOGO) {
         const paddingPx = size * padding;
         const availableSize = size - paddingPx * 2;
 
@@ -1163,13 +1239,15 @@ class BrandKitGenerator {
     }
 
     renderAppIcons() {
-        // iOS icon - 22.37% border radius (Apple standard)
-        this.renderAppIcon('appIconIOS', 120, 0.2237);
-
-        // Android icon - slightly smaller radius
-        this.renderAppIcon('appIconAndroid', 120, 0.15);
+        Renderer.renderAppIconPreviews(this.getState());
     }
 
+    /**
+     * Render an app icon with rounded corners and border.
+     * @param {string} canvasId - DOM id of the canvas element
+     * @param {number} size - Icon size in pixels
+     * @param {number} radiusRatio - Corner radius ratio (0-1)
+     */
     renderAppIcon(canvasId, size, radiusRatio) {
         const canvas = document.getElementById(canvasId);
         const ctx = canvas.getContext('2d');
@@ -1202,66 +1280,28 @@ class BrandKitGenerator {
         ctx.clip();
 
         // Draw multi-line logo text
-        this.renderMultiLineText(ctx, size, 0.15);
+        this.renderMultiLineText(ctx, size, CONFIG.PADDING.APP_ICON);
 
         ctx.restore();
     }
 
+    /**
+     * Render the logo to a new canvas at the specified size.
+     * @param {number} size - Canvas size in pixels
+     * @returns {HTMLCanvasElement} The rendered canvas
+     */
     renderToCanvas(size) {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-
-        canvas.width = size;
-        canvas.height = size;
-
-        // Background
-        if (this.bgType === 'color') {
-            ctx.fillStyle = this.bgColor;
-            ctx.fillRect(0, 0, size, size);
-        }
-
-        // Render multi-line text
-        this.renderMultiLineText(ctx, size, 0.075);
-
-        return canvas;
+        return Renderer.renderToCanvas(size, this.getState());
     }
 
+    /**
+     * Render an app icon to a new canvas.
+     * @param {number} size - Icon size in pixels
+     * @param {number} radiusRatio - Corner radius ratio (0-1)
+     * @returns {HTMLCanvasElement} The rendered canvas
+     */
     renderAppIconToCanvas(size, radiusRatio) {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const radius = size * radiusRatio;
-
-        canvas.width = size;
-        canvas.height = size;
-
-        // Draw rounded rectangle background
-        ctx.beginPath();
-        ctx.roundRect(0, 0, size, size, radius);
-        ctx.fillStyle = this.appIconBg;
-        ctx.fill();
-
-        // Draw border if enabled (inset to avoid corner overflow)
-        if (this.appIconBorderEnabled) {
-            const borderWidth = Math.max(1, size / 120);
-            const inset = borderWidth / 2;
-            ctx.beginPath();
-            ctx.roundRect(inset, inset, size - borderWidth, size - borderWidth, radius - inset);
-            ctx.strokeStyle = this.appIconBorder;
-            ctx.lineWidth = borderWidth;
-            ctx.stroke();
-        }
-
-        // Clip to rounded rectangle for the logo
-        ctx.save();
-        ctx.beginPath();
-        ctx.roundRect(0, 0, size, size, radius);
-        ctx.clip();
-
-        // Draw multi-line logo text
-        this.renderMultiLineText(ctx, size, 0.15);
-
-        ctx.restore();
-        return canvas;
+        return Renderer.renderAppIconToCanvas(size, radiusRatio, this.getState());
     }
 
     // ==================== SVG GENERATION ====================
@@ -1386,12 +1426,17 @@ class BrandKitGenerator {
         return ttfBuffer;
     }
 
+    /**
+     * Generate SVG logo with vector paths from opentype.js.
+     * @async
+     * @returns {Promise<string>} SVG markup
+     */
     async generateSVG() {
         // Use cached opentype font
         const font = await this.getOpentypeFont();
         console.log('Using font:', font.names.fullName);
 
-        const padding = 40;
+        const padding = CONFIG.PADDING.SVG;
 
         // Calculate dimensions for all lines
         let maxLineWidth = 0;
@@ -1471,6 +1516,11 @@ class BrandKitGenerator {
         return svgContent;
     }
 
+    /**
+     * Generate and download the complete brand kit as a ZIP file.
+     * Includes logos (PNG/SVG), favicons, iOS icons, Android icons, and font.
+     * @async
+     */
     async generateBrandKit() {
         const btn = document.getElementById('generateBtn');
         const btnText = btn.querySelector('.btn-text');
@@ -1487,31 +1537,25 @@ class BrandKitGenerator {
         const zip = new JSZip();
         const assets = [];
 
-        // Define all assets to generate
-        const logoSizes = [1024, 512, 256, 128];
-        const faviconSizes = [16, 32, 48, 180];
-        const iosSizes = [1024, 180, 167, 152, 120];
-        const androidSizes = [512, 192, 144, 96, 72, 48];
-
         // Logos
-        logoSizes.forEach(size => {
+        CONFIG.EXPORT.LOGO_SIZES.forEach(size => {
             assets.push({ folder: 'logos', name: `logo-${size}.png`, size });
         });
 
         // Favicons
-        faviconSizes.forEach(size => {
+        CONFIG.EXPORT.FAVICON_SIZES.forEach(size => {
             const name = size === 180 ? 'apple-touch-icon.png' : `favicon-${size}x${size}.png`;
             assets.push({ folder: 'favicons', name, size });
         });
 
         // iOS (with app icon style)
-        iosSizes.forEach(size => {
-            assets.push({ folder: 'ios', name: `ios-${size}.png`, size, type: 'appicon', radius: 0.2237 });
+        CONFIG.EXPORT.IOS_SIZES.forEach(size => {
+            assets.push({ folder: 'ios', name: `ios-${size}.png`, size, type: 'appicon', radius: CONFIG.RADIUS.IOS });
         });
 
         // Android (with app icon style)
-        androidSizes.forEach(size => {
-            assets.push({ folder: 'android', name: `android-${size}.png`, size, type: 'appicon', radius: 0.15 });
+        CONFIG.EXPORT.ANDROID_SIZES.forEach(size => {
+            assets.push({ folder: 'android', name: `android-${size}.png`, size, type: 'appicon', radius: CONFIG.RADIUS.ANDROID });
         });
 
         const totalAssets = assets.length;
@@ -1671,58 +1715,32 @@ Font:
 
     // ==================== SAVED CONFIGS ====================
 
+    /**
+     * Get current configuration as a serializable object.
+     * @returns {Object} Configuration data
+     */
     getConfigData() {
-        return {
-            // New multi-line format
-            lines: this.lines.map(line => ({
-                text: line.text,
-                letters: line.letters.map(l => ({ char: l.char, color: l.color })),
-                fontSize: line.fontSize,
-                letterSpacing: line.letterSpacing
-            })),
-            font: this.font,
-            fontWeight: this.fontWeight,
-            baseFontSize: this.baseFontSize,
-            lineSpacing: this.lineSpacing,
-            horizontalAlign: this.horizontalAlign,
-            defaultColor: this.defaultColor,
-            bgType: this.bgType,
-            bgColor: this.bgColor,
-            layerOrder: this.layerOrder,
-            appIconBg: this.appIconBg,
-            appIconBorder: this.appIconBorder,
-            appIconBorderEnabled: this.appIconBorderEnabled,
-            timestamp: Date.now(),
-            // Legacy fields for backward compatibility
-            logoText: this.logoText,
-            letters: this.letters.map(l => ({ char: l.char, color: l.color })),
-            fontSize: this.baseFontSize,
-            letterSpacing: this.lines[0]?.letterSpacing || 0
-        };
+        return Storage.getConfigData(this.getState());
     }
 
+    /**
+     * Save current configuration to localStorage with preview image.
+     */
     saveConfig() {
-        const configs = this.getSavedConfigs();
-        const newConfig = this.getConfigData();
-
-        // Generate preview image
-        const previewCanvas = this.renderToCanvas(120);
-        newConfig.preview = previewCanvas.toDataURL('image/png');
-
-        configs.push(newConfig);
-        localStorage.setItem('brandkit_configs', JSON.stringify(configs));
+        const previewCanvas = this.renderToCanvas(CONFIG.SAVED_CONFIG_PREVIEW);
+        const previewDataUrl = previewCanvas.toDataURL('image/png');
+        Storage.saveConfig(this.getState(), previewDataUrl);
 
         this.renderSavedConfigs();
         this.showToast('Configuration saved');
     }
 
+    /**
+     * Retrieve saved configurations from localStorage.
+     * @returns {Array} Array of saved configurations
+     */
     getSavedConfigs() {
-        try {
-            const data = localStorage.getItem('brandkit_configs');
-            return data ? JSON.parse(data) : [];
-        } catch (e) {
-            return [];
-        }
+        return Storage.getSavedConfigs();
     }
 
     loadSavedConfigs() {
@@ -1751,8 +1769,8 @@ Font:
 
             // Preview canvas
             const canvas = document.createElement('canvas');
-            canvas.width = 120;
-            canvas.height = 60;
+            canvas.width = CONFIG.SAVED_CONFIG_PREVIEW;
+            canvas.height = CONFIG.SAVED_CONFIG_PREVIEW / 2;
             const ctx = canvas.getContext('2d');
 
             // Load preview image
@@ -1760,10 +1778,12 @@ Font:
                 const img = new Image();
                 img.onload = () => {
                     // Draw centered and scaled
-                    const scale = Math.min(120 / img.width, 60 / img.height);
+                    const previewW = CONFIG.SAVED_CONFIG_PREVIEW;
+                    const previewH = CONFIG.SAVED_CONFIG_PREVIEW / 2;
+                    const scale = Math.min(previewW / img.width, previewH / img.height);
                     const w = img.width * scale;
                     const h = img.height * scale;
-                    ctx.drawImage(img, (120 - w) / 2, (60 - h) / 2, w, h);
+                    ctx.drawImage(img, (previewW - w) / 2, (previewH - h) / 2, w, h);
                 };
                 img.src = config.preview;
             }
@@ -1790,42 +1810,29 @@ Font:
         });
     }
 
+    /**
+     * Load a configuration and update the UI.
+     * Supports both legacy single-line and new multi-line formats.
+     * @param {Object} config - Configuration object to load
+     */
     loadConfig(config) {
-        // Check if new multi-line format or legacy format
-        if (config.lines && Array.isArray(config.lines)) {
-            // New multi-line format
-            this.lines = config.lines.map(line => ({
-                text: line.text,
-                letters: line.letters.map(l => ({ char: l.char, color: l.color })),
-                fontSize: line.fontSize || 100,
-                letterSpacing: line.letterSpacing || 0
-            }));
-            this.baseFontSize = config.baseFontSize || 100;
-            this.lineSpacing = config.lineSpacing || 10;
-            this.horizontalAlign = config.horizontalAlign || 'center';
-        } else {
-            // Legacy single-line format - convert to new format
-            this.lines = [{
-                text: config.logoText || 'Brand',
-                letters: config.letters ? config.letters.map(l => ({ char: l.char, color: l.color })) : [],
-                fontSize: 100,
-                letterSpacing: config.letterSpacing || 0
-            }];
-            this.baseFontSize = config.fontSize || 100;
-            this.lineSpacing = 10;
-            this.horizontalAlign = 'center';
-        }
+        // Parse config using Storage module (handles legacy format conversion)
+        const parsed = Storage.parseConfig(config);
 
-        // Common settings
-        this.font = config.font;
-        this.fontWeight = config.fontWeight;
-        this.defaultColor = config.defaultColor;
-        this.bgType = config.bgType;
-        this.bgColor = config.bgColor;
-        this.layerOrder = config.layerOrder || 'right';
-        this.appIconBg = config.appIconBg || '#ffffff';
-        this.appIconBorder = config.appIconBorder || '#e0e0e0';
-        this.appIconBorderEnabled = config.appIconBorderEnabled !== false;
+        // Apply parsed state to this instance
+        this.lines = parsed.lines;
+        this.baseFontSize = parsed.baseFontSize;
+        this.lineSpacing = parsed.lineSpacing;
+        this.horizontalAlign = parsed.horizontalAlign;
+        this.font = parsed.font;
+        this.fontWeight = parsed.fontWeight;
+        this.defaultColor = parsed.defaultColor;
+        this.bgType = parsed.bgType;
+        this.bgColor = parsed.bgColor;
+        this.layerOrder = parsed.layerOrder;
+        this.appIconBg = parsed.appIconBg;
+        this.appIconBorder = parsed.appIconBorder;
+        this.appIconBorderEnabled = parsed.appIconBorderEnabled;
 
         // Update UI controls
         document.getElementById('tabTitle').textContent = this.lines[0]?.text || 'Brand';
@@ -1874,9 +1881,7 @@ Font:
     }
 
     deleteConfig(index) {
-        const configs = this.getSavedConfigs();
-        configs.splice(index, 1);
-        localStorage.setItem('brandkit_configs', JSON.stringify(configs));
+        Storage.deleteConfig(index);
         this.renderSavedConfigs();
         this.showToast('Configuration deleted');
     }
