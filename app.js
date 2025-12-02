@@ -235,8 +235,8 @@ class BrandKitGenerator {
             document.getElementById('popoverLetterSpacingValue').textContent = `${spacing}px`;
             // Update all previews in popover
             this.updatePopoverPreviews();
-            // Re-render line editors to sync slider values
-            this.renderLineEditors();
+            // Sync line editor slider value without rebuilding
+            this.syncLineSpacingSlider(0, spacing);
             // Update main preview
             this.render();
         });
@@ -646,18 +646,55 @@ class BrandKitGenerator {
                 color: oldLetter && oldLetter.char === char ? oldLetter.color : null
             };
         });
-        this.renderLineEditors();
+        // Only update the letter buttons for this line, not the whole editor
+        this.updateLineLetterButtons(lineIndex);
+    }
+
+    updateLineLetterButtons(lineIndex) {
+        const container = document.getElementById('linesEditor');
+        if (!container) return;
+
+        const lineEditor = container.querySelector(`.line-editor[data-line-index="${lineIndex}"]`);
+        if (!lineEditor) return;
+
+        const letterButtonsContainer = lineEditor.querySelector('.letter-buttons');
+        if (!letterButtonsContainer) return;
+
+        const line = this.lines[lineIndex];
+        letterButtonsContainer.innerHTML = '';
+
+        line.letters.forEach((letter, letterIndex) => {
+            const btn = document.createElement('button');
+            btn.className = 'letter-btn' + (letter.color ? ' has-custom-color' : '');
+            btn.textContent = letter.char;
+            btn.style.color = letter.color || this.defaultColor;
+            btn.addEventListener('click', () => this.openColorPicker(letterIndex, lineIndex));
+            letterButtonsContainer.appendChild(btn);
+        });
+    }
+
+    syncLineSpacingSlider(lineIndex, value) {
+        const container = document.getElementById('linesEditor');
+        if (!container) return;
+
+        const lineEditor = container.querySelector(`.line-editor[data-line-index="${lineIndex}"]`);
+        if (!lineEditor) return;
+
+        const slider = lineEditor.querySelector('.line-letter-spacing');
+        const valueDisplay = lineEditor.querySelector('.line-letter-spacing-value');
+        if (slider) slider.value = value;
+        if (valueDisplay) valueDisplay.textContent = `${value}px`;
     }
 
     updateLetterColors() {
-        this.lines.forEach(line => {
+        this.lines.forEach((line, lineIndex) => {
             line.letters.forEach(letter => {
                 if (!letter.color) {
                     letter.customColor = false;
                 }
             });
+            this.updateLineLetterButtons(lineIndex);
         });
-        this.renderLineEditors();
     }
 
     renderLetterButtons() {
@@ -831,7 +868,7 @@ class BrandKitGenerator {
             if (line && line.letters[this.currentLetterIndex]) {
                 line.letters[this.currentLetterIndex].color = color;
             }
-            this.renderLineEditors();
+            this.updateLineLetterButtons(this.currentLineIndex);
             this.updateFontPreviews();
             this.render();
         }
@@ -844,7 +881,7 @@ class BrandKitGenerator {
             if (line && line.letters[this.currentLetterIndex]) {
                 line.letters[this.currentLetterIndex].color = null;
             }
-            this.renderLineEditors();
+            this.updateLineLetterButtons(this.currentLineIndex);
             this.updateFontPreviews();
             this.render();
         }
