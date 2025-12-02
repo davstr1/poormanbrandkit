@@ -280,7 +280,7 @@
                     </div>
 
                     <div class="control-group">
-                        <label for="baseFontSize">Base size</label>
+                        <label for="baseFontSize">Logo size</label>
                         <input type="range" id="baseFontSize" min="40" max="200" value="100">
                         <span id="baseFontSizeValue">100px</span>
                     </div>
@@ -322,24 +322,24 @@
                     </div>
 
                     <div class="control-group">
-                        <label for="defaultColor">Default color</label>
+                        <label for="defaultColor">Text color</label>
                         <input type="color" id="defaultColor" value="#333333">
                     </div>
 
                     <div class="control-group">
-                        <label>Layer order</label>
+                        <label>Overlap</label>
                         <div class="bg-options">
                             <label>
-                                <input type="radio" name="layerOrder" value="right" checked> Right on top
+                                <input type="radio" name="layerOrder" value="right" checked> Last on top
                             </label>
                             <label>
-                                <input type="radio" name="layerOrder" value="left"> Left on top
+                                <input type="radio" name="layerOrder" value="left"> First on top
                             </label>
                         </div>
                     </div>
 
                     <div class="control-group">
-                        <label for="bgColor">Logo background</label>
+                        <label for="bgColor">Export background</label>
                         <div class="bg-options">
                             <label>
                                 <input type="radio" name="bgType" value="transparent" checked> Transparent
@@ -352,10 +352,10 @@
                     </div>
                 </div>
 
-                <!-- Saved Configurations -->
+                <!-- Saved Logos -->
                 <div class="saved-configs">
                     <div class="saved-configs-header">
-                        <h3>Saved configurations</h3>
+                        <h3>Saved logos</h3>
                         <button id="saveConfigBtn" class="btn-save" title="Save current configuration">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
@@ -366,7 +366,7 @@
                         </button>
                     </div>
                     <div id="savedConfigsList" class="saved-configs-list">
-                        <p class="no-configs">No saved configurations</p>
+                        <p class="no-configs">No saved logos yet</p>
                     </div>
                 </div>
             </section>
@@ -401,7 +401,7 @@
                     </div>
 
                     <div class="preview-sizes">
-                        <h3>Multi-size preview</h3>
+                        <h3>Sizes</h3>
                         <div class="size-previews">
                             <div class="size-preview">
                                 <canvas id="preview512" width="128" height="128"></canvas>
@@ -446,7 +446,7 @@
                     </div>
 
                     <div class="app-icon-preview">
-                        <h3>App Store icon</h3>
+                        <h3>App icons</h3>
                         <div class="app-icon-controls">
                             <div class="app-icon-control">
                                 <label for="appIconBg">Background</label>
