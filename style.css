@@ -702,12 +702,12 @@ h3 {
     right: 0;
     bottom: 0;
     background-image:
-        /* Center lines (darker gray) */
-        linear-gradient(to right, rgba(0, 0, 0, 0.4) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(0, 0, 0, 0.4) 1px, transparent 1px),
-        /* Grid lines (light gray) */
-        linear-gradient(to right, rgba(0, 0, 0, 0.1) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(0, 0, 0, 0.1) 1px, transparent 1px);
+        /* Center lines */
+        linear-gradient(to right, var(--grid-center-color) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--grid-center-color) 1px, transparent 1px),
+        /* Grid lines */
+        linear-gradient(to right, var(--grid-line-color) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--grid-line-color) 1px, transparent 1px);
     background-size:
         100% 100%,
         100% 100%,
@@ -718,6 +718,24 @@ h3 {
         0 50%,
         0 0,
         0 0;
+}
+
+/* Grid colors for light background */
+.main-preview.light {
+    --grid-center-color: rgba(0, 0, 0, 0.4);
+    --grid-line-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Grid colors for dark background */
+.main-preview.dark {
+    --grid-center-color: rgba(255, 255, 255, 0.5);
+    --grid-line-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Grid colors for checker background */
+.main-preview.checker {
+    --grid-center-color: rgba(0, 0, 0, 0.5);
+    --grid-line-color: rgba(0, 0, 0, 0.15);
 }
 
 /* Size Previews */
