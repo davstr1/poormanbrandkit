@@ -501,6 +501,14 @@ class BrandKitGenerator {
             });
         });
 
+        // Grid toggle
+        document.getElementById('gridToggle').addEventListener('click', (e) => {
+            const btn = e.currentTarget;
+            const grid = document.getElementById('previewGrid');
+            btn.classList.toggle('active');
+            grid.classList.toggle('show');
+        });
+
         // App icon controls
         document.getElementById('appIconBg').addEventListener('input', (e) => {
             this.appIconBg = e.target.value;

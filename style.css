@@ -609,6 +609,7 @@ h3 {
 }
 
 .main-preview {
+    position: relative;
     padding: 40px;
     display: flex;
     justify-content: center;
@@ -642,6 +643,81 @@ h3 {
 #logoSvg {
     max-width: 100%;
     height: auto;
+    position: relative;
+    z-index: 1;
+}
+
+/* Grid Toggle Button */
+.toggle-separator {
+    width: 1px;
+    height: 20px;
+    background: #ddd;
+    margin: 0 5px;
+}
+
+.grid-toggle {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    background: #f0f0f0;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.grid-toggle:hover {
+    background: #e0e0e0;
+}
+
+.grid-toggle.active {
+    background: #333;
+    color: #fff;
+}
+
+/* Preview Grid Overlay */
+.preview-grid {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 2;
+}
+
+.preview-grid.show {
+    opacity: 1;
+}
+
+.preview-grid::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image:
+        /* Center lines */
+        linear-gradient(to right, rgba(255, 0, 0, 0.5) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 0, 0, 0.5) 1px, transparent 1px),
+        /* Grid lines */
+        linear-gradient(to right, rgba(0, 150, 255, 0.2) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0, 150, 255, 0.2) 1px, transparent 1px);
+    background-size:
+        100% 100%,
+        100% 100%,
+        20px 20px,
+        20px 20px;
+    background-position:
+        50% 0,
+        0 50%,
+        0 0,
+        0 0;
 }
 
 /* Size Previews */
