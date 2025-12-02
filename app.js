@@ -629,7 +629,7 @@ class BrandKitGenerator {
             try {
                 await navigator.clipboard.writeText(hex);
                 this.copiedColor = hex;
-                this.showToast('Couleur copiée : ' + hex);
+                this.showToast('Color copied: ' + hex);
                 document.getElementById('copyHex').classList.add('copied');
                 setTimeout(() => {
                     document.getElementById('copyHex').classList.remove('copied');
@@ -650,13 +650,13 @@ class BrandKitGenerator {
                 if (/^#[0-9A-Fa-f]{6}$/.test(color)) {
                     hexInput.value = color;
                     colorPicker.value = color;
-                    this.showToast('Couleur collée : ' + color);
+                    this.showToast('Color pasted: ' + color);
                     this.updateClipboardPreview(color);
                 } else {
-                    this.showToast('Couleur invalide dans le presse-papiers');
+                    this.showToast('Invalid color in clipboard');
                 }
             } catch (err) {
-                this.showToast('Impossible de lire le presse-papiers');
+                this.showToast('Cannot read clipboard');
             }
         });
 
@@ -1622,7 +1622,7 @@ Font:
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'saved-config-delete';
             deleteBtn.innerHTML = '×';
-            deleteBtn.title = 'Supprimer';
+            deleteBtn.title = 'Delete';
             deleteBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.deleteConfig(index);
