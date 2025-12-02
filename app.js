@@ -1347,37 +1347,71 @@ visit: https://fonts.google.com/specimen/${this.font.replace(/\s+/g, '+')}#licen
 ================================
 
 Generated with The Poor Man's Brand Kit Maker
+https://github.com/davstr1/poormanbrandkit
 
-Font: ${this.font} (${this.fontWeight})
+Font: ${this.font} (weight: ${this.fontWeight})
+Letter spacing: ${this.letterSpacing}px
 
 Contents:
-- /logos/ - Logo in various sizes (1024px, 512px, 256px, 128px) + SVG
-- /favicons/ - Web favicons and Apple touch icon
-- /ios/ - iOS App Store icons
-- /android/ - Android/Google Play icons
-- /fonts/ - Font file used for the logo (TTF)
+---------
+
+/logos/
+  - logo-1024.png (1024x1024) - Full size logo
+  - logo-512.png (512x512)
+  - logo-256.png (256x256)
+  - logo-128.png (128x128)
+  - logo.svg - Vector format (scalable)
+
+/favicons/
+  - favicon-16x16.png - Browser tab icon
+  - favicon-32x32.png - Browser tab icon (retina)
+  - favicon-48x48.png - Windows site icon
+  - apple-touch-icon.png (180x180) - iOS Safari bookmark
+
+/ios/
+  - ios-1024.png - App Store (required)
+  - ios-180.png - iPhone @3x
+  - ios-167.png - iPad Pro
+  - ios-152.png - iPad
+  - ios-120.png - iPhone @2x
+
+/android/
+  - android-512.png - Play Store (required)
+  - android-192.png - xxxhdpi launcher
+  - android-144.png - xxhdpi launcher
+  - android-96.png - xhdpi launcher
+  - android-72.png - hdpi launcher
+  - android-48.png - mdpi launcher
+
+/fonts/
+  - ${this.font.replace(/\s+/g, '-')}-${this.fontWeight}.ttf - Font file
+  - LICENSE.txt - Font license information
+
 
 Usage:
 ------
 
-Web Favicons:
-Add these to your HTML <head>:
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+Web Favicons - Add to your HTML <head>:
 
-iOS:
-Use ios-1024.png for App Store submission.
-Other sizes for various device icons.
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 
-Android:
-Use android-512.png for Play Store submission.
-Other sizes for launcher icons.
+iOS App Store:
+  Use ios-1024.png for App Store Connect submission.
+  Xcode will use the other sizes for device icons.
+
+Android / Google Play:
+  Use android-512.png for Play Store submission.
+  Place other sizes in res/mipmap-* folders.
+
+SVG Logo:
+  Use logo.svg for websites, print, or any scalable usage.
+  The SVG contains vector paths (not embedded fonts).
 
 Font:
-The /fonts/ folder contains the TTF font used for the logo.
-Install it on your system to use it in other software.
-See LICENSE.txt for license information.
+  Install the TTF file to use the same font in other apps.
+  The font is from Google Fonts - see LICENSE.txt for terms.
 `;
 
         zip.file('README.txt', readme);
