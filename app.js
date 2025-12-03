@@ -1787,12 +1787,41 @@ Font:
             opt.classList.toggle('selected', opt.dataset.font === this.font);
         });
 
+        // Clear opentype font cache to force reload with new weights
+        this.opentypeFonts = {};
+
+        // Load all font weights used in lines
+        const fontFamily = this.font.replace(/ /g, '+');
+        const weights = new Set();
+        this.lines.forEach(line => {
+            weights.add(line.fontWeight || this.fontWeight);
+        });
+        const weightsStr = [...weights].sort().join(';');
+        const linkId = `font-weights-${fontFamily}-config`;
+
+        // Remove old config font link if exists
+        const oldLink = document.getElementById(linkId);
+        if (oldLink) oldLink.remove();
+
+        // Create new font link with required weights
+        const link = document.createElement('link');
+        link.id = linkId;
+        link.href = `https://fonts.googleapis.com/css2?family=${fontFamily}:wght@${weightsStr}&display=swap`;
+        link.rel = 'stylesheet';
+        document.head.appendChild(link);
+
         // Rebuild line editors and update previews
         this.renderLineEditors();
         this.updateFontPreviews();
 
-        // Render
-        this.render();
+        // Render after font loads
+        link.onload = () => {
+            this.render();
+        };
+
+        // Fallback render in case onload doesn't fire
+        setTimeout(() => this.render(), 500);
+
         this.showToast('Configuration loaded');
     }
 

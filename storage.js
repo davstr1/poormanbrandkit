@@ -16,7 +16,8 @@ const Storage = {
                 text: line.text,
                 letters: line.letters.map(l => ({ char: l.char, color: l.color })),
                 fontSize: line.fontSize,
-                letterSpacing: line.letterSpacing
+                letterSpacing: line.letterSpacing,
+                fontWeight: line.fontWeight
             })),
             font: state.font,
             fontWeight: state.fontWeight,
@@ -91,7 +92,8 @@ const Storage = {
                 text: line.text,
                 letters: line.letters.map(l => ({ char: l.char, color: l.color })),
                 fontSize: line.fontSize || 100,
-                letterSpacing: line.letterSpacing || 0
+                letterSpacing: line.letterSpacing || 0,
+                fontWeight: line.fontWeight || config.fontWeight || CONFIG.DEFAULTS.FONT_WEIGHT
             }));
             baseFontSize = config.baseFontSize || CONFIG.DEFAULTS.BASE_FONT_SIZE;
             lineSpacing = config.lineSpacing || CONFIG.DEFAULTS.LINE_SPACING;
@@ -104,7 +106,8 @@ const Storage = {
                     ? config.letters.map(l => ({ char: l.char, color: l.color }))
                     : [],
                 fontSize: 100,
-                letterSpacing: config.letterSpacing || 0
+                letterSpacing: config.letterSpacing || 0,
+                fontWeight: config.fontWeight || CONFIG.DEFAULTS.FONT_WEIGHT
             }];
             baseFontSize = config.fontSize || CONFIG.DEFAULTS.BASE_FONT_SIZE;
             lineSpacing = CONFIG.DEFAULTS.LINE_SPACING;
