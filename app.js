@@ -167,13 +167,16 @@ class BrandKitGenerator {
         // Build the custom font list UI
         this.buildFontList();
 
-        // Load fonts via Google Fonts CSS API
+        // Load fonts via Google Fonts CSS API (just for preview, single weight)
         const fontNames = this.fontData.map(f => f.name.replace(/ /g, '+')).join('|');
 
         const link = document.createElement('link');
         link.href = `https://fonts.googleapis.com/css?family=${fontNames}&display=swap`;
         link.rel = 'stylesheet';
         document.head.appendChild(link);
+
+        // Load all weights for the default font
+        this.loadFontWeights(this.font);
 
         link.onload = () => {
             this.render();
@@ -266,6 +269,9 @@ class BrandKitGenerator {
     selectFont(fontName) {
         this.font = fontName;
 
+        // Load all weights for this font
+        this.loadFontWeights(fontName);
+
         // Update display - show font name normally
         document.getElementById('fontDisplayText').textContent = fontName;
 
@@ -279,6 +285,27 @@ class BrandKitGenerator {
 
         // Render
         this.render();
+    }
+
+    /**
+     * Load all font weights for a specific font family.
+     * @param {string} fontName - The font family name
+     */
+    loadFontWeights(fontName) {
+        const fontFamily = fontName.replace(/ /g, '+');
+        const weights = '300;400;500;600;700;800;900';
+        const linkId = `font-weights-${fontFamily}`;
+
+        // Don't reload if already loaded
+        if (document.getElementById(linkId)) return;
+
+        const link = document.createElement('link');
+        link.id = linkId;
+        link.href = `https://fonts.googleapis.com/css2?family=${fontFamily}:wght@${weights}&display=swap`;
+        link.rel = 'stylesheet';
+        document.head.appendChild(link);
+
+        link.onload = () => this.render();
     }
 
     setupFontSelector() {
@@ -442,6 +469,9 @@ class BrandKitGenerator {
 
     selectFontFromPopover(fontName) {
         this.font = fontName;
+
+        // Load all weights for this font
+        this.loadFontWeights(fontName);
 
         // Update display
         document.getElementById('fontDisplayText').textContent = fontName;
