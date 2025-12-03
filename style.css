@@ -1557,3 +1557,115 @@ footer {
     border-top: 1px solid var(--border-color);
     margin: 40px 0;
 }
+
+/* ==================== Mobile Message ==================== */
+.mobile-message {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .container,
+    .modal,
+    .font-popover,
+    .back-to-top {
+        display: none !important;
+    }
+
+    .mobile-message {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 40px 30px;
+        text-align: center;
+        background: var(--color-black);
+        color: var(--color-white);
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 10000;
+    }
+
+    .mobile-message p {
+        margin: 12px 0;
+        font-size: 18px;
+        line-height: 1.5;
+        max-width: 320px;
+    }
+
+    .mobile-message .mobile-avatar {
+        width: 85px;
+        height: 85px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-top: 30px;
+    }
+
+    .mobile-message .mobile-hook {
+        font-size: 24px;
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+
+    .mobile-message .mobile-shout {
+        font-size: 14px;
+        color: var(--color-text-muted);
+        font-style: italic;
+        margin-top: 0;
+        margin-bottom: 30px;
+    }
+
+    .mobile-message strong {
+        color: var(--color-white);
+        font-size: 20px;
+    }
+
+    .mobile-message .mobile-footer {
+        margin-top: 30px;
+        font-size: 14px;
+        color: var(--color-text-muted);
+    }
+
+    .mobile-message .mobile-bookmark-link {
+        color: var(--color-white);
+        text-decoration: underline;
+        cursor: pointer;
+    }
+
+    .mobile-bookmark-popover {
+        display: none;
+        flex-direction: row;
+        gap: 10px;
+        padding: 12px;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: var(--border-radius-md);
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 10001;
+    }
+
+    .mobile-bookmark-popover.visible {
+        display: flex;
+    }
+
+    .mobile-bookmark-popover button {
+        padding: 10px 20px;
+        border: none;
+        border-radius: var(--border-radius-sm);
+        background: var(--color-white);
+        color: var(--color-black);
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+    .mobile-bookmark-popover button:active {
+        transform: scale(0.95);
+    }
+}

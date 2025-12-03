@@ -724,5 +724,61 @@
     <script src="app.js"></script>
     <script data-goatcounter="https://poorman.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>
+
+    <!-- Mobile message (hidden on desktop, shown on mobile via CSS) -->
+    <div class="mobile-message">
+        <p class="mobile-hook">You came here on mobile, didn't you?</p>
+        <p class="mobile-shout">He did, he did!!!</p>
+        <p>Look, I respect the hustle. Checking things on the go...</p>
+        <p>But you wouldn't paint a mural on a Post-it. Would you?</p>
+        <p><strong>This is a desktop thing.</strong></p>
+        <p><a href="#" class="mobile-bookmark-link" id="bookmarkLink">Bookmark this.</a> Come back on a real screen.</p>
+        <div class="mobile-bookmark-popover" id="bookmarkPopover">
+            <button id="copyLinkBtn">Copy link</button>
+            <button id="shareLinkBtn">Share</button>
+        </div>
+        <p class="mobile-footer">It's free, and not going anywhere.</p>
+        <img src="avatar.webp" alt="Poor Man's Brand Kit mascot" class="mobile-avatar">
+    </div>
+    <script>
+    (function() {
+        const link = document.getElementById('bookmarkLink');
+        const popover = document.getElementById('bookmarkPopover');
+        const copyBtn = document.getElementById('copyLinkBtn');
+        const shareBtn = document.getElementById('shareLinkBtn');
+
+        // Hide share button if not supported
+        if (!navigator.share) {
+            shareBtn.style.display = 'none';
+        }
+
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            popover.classList.toggle('visible');
+        });
+
+        // Close popover when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!link.contains(e.target) && !popover.contains(e.target)) {
+                popover.classList.remove('visible');
+            }
+        });
+
+        copyBtn.addEventListener('click', function() {
+            navigator.clipboard.writeText(window.location.href).then(function() {
+                copyBtn.textContent = 'Copied!';
+                setTimeout(() => { copyBtn.textContent = 'Copy link'; }, 2000);
+            });
+        });
+
+        shareBtn.addEventListener('click', function() {
+            navigator.share({
+                title: 'The Poor Man\'s Brand Kit Maker',
+                text: 'Free logo generator. No login, no payment.',
+                url: window.location.href
+            });
+        });
+    })();
+    </script>
 </body>
 </html>
