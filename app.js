@@ -1315,13 +1315,14 @@ class BrandKitGenerator {
     /**
      * Fetch full font (not subsetted) for brand kit export.
      * @async
+     * @param {string} weight - Font weight to fetch
      * @returns {Promise<ArrayBuffer>} TTF font buffer
      */
-    async fetchFullFont() {
+    async fetchFullFont(weight) {
         await this.loadWawoff2();
 
         const fontFamily = this.font.replace(/ /g, '+');
-        const cssUrl = `https://fonts.googleapis.com/css2?family=${fontFamily}:wght@${this.fontWeight}&display=swap`;
+        const cssUrl = `https://fonts.googleapis.com/css2?family=${fontFamily}:wght@${weight}&display=swap`;
 
         const cssResponse = await fetch(cssUrl);
         const css = await cssResponse.text();
@@ -1499,16 +1500,26 @@ class BrandKitGenerator {
             console.error('SVG generation failed:', e);
         }
 
-        // Add font file
-        progressText.textContent = 'Downloading font...';
+        // Add font files (all weights used)
+        progressText.textContent = 'Downloading fonts...';
         try {
-            const fontBuffer = await this.fetchFullFont();
-            const fontFileName = `${this.font.replace(/\s+/g, '-')}-${this.fontWeight}.ttf`;
-            zip.folder('fonts').file(fontFileName, fontBuffer);
+            // Collect unique weights from all lines
+            const weights = new Set();
+            this.lines.forEach(line => {
+                weights.add(line.fontWeight || this.fontWeight);
+            });
+
+            // Download each weight
+            for (const weight of weights) {
+                const fontBuffer = await this.fetchFullFont(weight);
+                const fontFileName = `${this.font.replace(/\s+/g, '-')}-${weight}.ttf`;
+                zip.folder('fonts').file(fontFileName, fontBuffer);
+            }
 
             // Add font license info
+            const weightList = [...weights].sort().join(', ');
             const fontLicense = `Font: ${this.font}
-Weight: ${this.fontWeight}
+Weights: ${weightList}
 Source: Google Fonts (https://fonts.google.com/specimen/${this.font.replace(/\s+/g, '+')})
 
 License:
