@@ -506,6 +506,15 @@ h3 {
     min-width: 45px;
 }
 
+.line-control select {
+    padding: 4px 8px;
+    font-size: 0.85rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    background: var(--color-bg-input);
+    cursor: pointer;
+}
+
 .add-line-btn {
     width: 100%;
     padding: 12px;

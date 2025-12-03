@@ -78,11 +78,12 @@ class BrandKitGenerator {
                 text: 'Brand',
                 letters: [],
                 fontSize: 100,      // % of baseFontSize
-                letterSpacing: 0
+                letterSpacing: 0,
+                fontWeight: CONFIG.DEFAULTS.FONT_WEIGHT
             }
         ];
         this.font = CONFIG.DEFAULTS.FONT;
-        this.fontWeight = CONFIG.DEFAULTS.FONT_WEIGHT;
+        this.fontWeight = CONFIG.DEFAULTS.FONT_WEIGHT;  // Global default, used for new lines
         this.baseFontSize = CONFIG.DEFAULTS.BASE_FONT_SIZE;
         this.lineSpacing = CONFIG.DEFAULTS.LINE_SPACING;
         this.horizontalAlign = CONFIG.DEFAULTS.HORIZONTAL_ALIGN;
@@ -116,9 +117,8 @@ class BrandKitGenerator {
         this.appIconBorder = CONFIG.DEFAULTS.APP_ICON_BORDER;
         this.appIconBorderEnabled = true;
 
-        // Font cache for opentype.js
-        this.opentypeFont = null;
-        this.fontCacheKey = null;
+        // Font cache for opentype.js (supports multiple weights)
+        this.opentypeFonts = {};  // { "fontName:weight": opentypeFont }
         this.fontLoading = false;
 
         // DOM Elements
@@ -881,6 +881,29 @@ class BrandKitGenerator {
             });
             lineControls.appendChild(sizeControl);
 
+            // Font weight selector
+            const weightControl = document.createElement('div');
+            weightControl.className = 'line-control';
+            const currentWeight = line.fontWeight || this.fontWeight;
+            weightControl.innerHTML = `
+                <label>Weight</label>
+                <select class="line-font-weight">
+                    <option value="300" ${currentWeight === '300' ? 'selected' : ''}>Light</option>
+                    <option value="400" ${currentWeight === '400' ? 'selected' : ''}>Regular</option>
+                    <option value="500" ${currentWeight === '500' ? 'selected' : ''}>Medium</option>
+                    <option value="600" ${currentWeight === '600' ? 'selected' : ''}>Semi-Bold</option>
+                    <option value="700" ${currentWeight === '700' ? 'selected' : ''}>Bold</option>
+                    <option value="800" ${currentWeight === '800' ? 'selected' : ''}>Extra-Bold</option>
+                    <option value="900" ${currentWeight === '900' ? 'selected' : ''}>Black</option>
+                </select>
+            `;
+            const weightSelect = weightControl.querySelector('.line-font-weight');
+            weightSelect.addEventListener('change', (e) => {
+                this.lines[lineIndex].fontWeight = e.target.value;
+                this.render();
+            });
+            lineControls.appendChild(weightControl);
+
             // Letter spacing slider
             const spacingControl = document.createElement('div');
             spacingControl.className = 'line-control';
@@ -935,7 +958,8 @@ class BrandKitGenerator {
             text: 'Text',
             letters: [{ char: 'T', color: null }, { char: 'e', color: null }, { char: 'x', color: null }, { char: 't', color: null }],
             fontSize: 100,
-            letterSpacing: 0
+            letterSpacing: 0,
+            fontWeight: this.fontWeight
         });
 
         this.renderLineEditors();
@@ -1050,7 +1074,8 @@ class BrandKitGenerator {
 
         this.lines.forEach((line, index) => {
             const lineFontSize = (line.fontSize / 100) * this.baseFontSize;
-            this.ctx.font = `${this.fontWeight} ${lineFontSize}px "${this.font}"`;
+            const lineFontWeight = line.fontWeight || this.fontWeight;
+            this.ctx.font = `${lineFontWeight} ${lineFontSize}px "${this.font}"`;
 
             let lineWidth = 0;
             line.letters.forEach((letter, i) => {
@@ -1078,19 +1103,15 @@ class BrandKitGenerator {
         this.svgElement.setAttribute('height', svgHeight);
         this.svgElement.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
 
-        // Get all text for cache key
-        const allText = this.lines.map(l => l.text).join('');
-        const cacheKey = `${this.font}:${this.fontWeight}:${allText}`;
-        if (!this.opentypeFont || this.fontCacheKey !== cacheKey) {
-            this.svgElement.innerHTML = this.bgType === 'color'
-                ? `<rect width="100%" height="100%" fill="${this.bgColor}"/><text x="50%" y="50%" text-anchor="middle" fill="#999" font-size="14">Loading...</text>`
-                : `<text x="50%" y="50%" text-anchor="middle" fill="#999" font-size="14">Loading...</text>`;
-        }
+        // Show loading placeholder
+        this.svgElement.innerHTML = this.bgType === 'color'
+            ? `<rect width="100%" height="100%" fill="${this.bgColor}"/><text x="50%" y="50%" text-anchor="middle" fill="#999" font-size="14">Loading...</text>`
+            : `<text x="50%" y="50%" text-anchor="middle" fill="#999" font-size="14">Loading...</text>`;
 
-        // Load font asynchronously
+        // Load all font weights asynchronously
         this.fontLoading = true;
         try {
-            const font = await this.getOpentypeFont();
+            const fontMap = await this.preloadAllWeights();
 
             // Recalculate with opentype for accurate SVG
             let maxOpentypeWidth = 0;
@@ -1098,13 +1119,15 @@ class BrandKitGenerator {
 
             this.lines.forEach((line, lineIndex) => {
                 const lineFontSize = (line.fontSize / 100) * this.baseFontSize;
+                const lineFontWeight = line.fontWeight || this.fontWeight;
+                const font = fontMap[lineFontWeight];
                 const positions = [];
                 let x = 0;
 
                 line.letters.forEach((letter) => {
                     const glyph = font.charToGlyph(letter.char);
                     const width = glyph.advanceWidth * (lineFontSize / font.unitsPerEm);
-                    positions.push({ letter, x, width, lineFontSize });
+                    positions.push({ letter, x, width, lineFontSize, font });
                     x += width + line.letterSpacing;
                 });
 
@@ -1145,7 +1168,7 @@ class BrandKitGenerator {
 
                 // Draw letters in correct order
                 const drawOrder = this.layerOrder === 'left' ? [...positions].reverse() : positions;
-                drawOrder.forEach(({ letter, x, lineFontSize: fontSize }) => {
+                drawOrder.forEach(({ letter, x, lineFontSize: fontSize, font }) => {
                     const color = letter.color || this.defaultColor;
                     const path = font.getPath(letter.char, xOffset + x, y, fontSize);
                     const pathData = path.toPathData(2);
@@ -1224,13 +1247,14 @@ class BrandKitGenerator {
     /**
      * Fetch and decompress font for current text (subsetted).
      * @async
+     * @param {string} weight - Font weight to fetch
      * @returns {Promise<ArrayBuffer>} TTF font buffer
      */
-    async fetchAndDecompressFont() {
+    async fetchAndDecompressFont(weight) {
         const fontFamily = this.font.replace(/ /g, '+');
         const allText = this.lines.map(l => l.text).join('');
         const textParam = encodeURIComponent(allText);
-        const cssUrl = `https://fonts.googleapis.com/css2?family=${fontFamily}:wght@${this.fontWeight}&text=${textParam}&display=swap`;
+        const cssUrl = `https://fonts.googleapis.com/css2?family=${fontFamily}:wght@${weight}&text=${textParam}&display=swap`;
 
         const cssResponse = await fetch(cssUrl);
         const css = await cssResponse.text();
@@ -1247,26 +1271,45 @@ class BrandKitGenerator {
     }
 
     /**
-     * Get cached opentype font or load it.
+     * Get cached opentype font for a specific weight, or load it.
      * @async
+     * @param {string} weight - Font weight to get
      * @returns {Promise<Object>} Opentype.js font object
      */
-    async getOpentypeFont() {
-        const allText = this.lines.map(l => l.text).join('');
-        const cacheKey = `${this.font}:${this.fontWeight}:${allText}`;
+    async getOpentypeFontForWeight(weight) {
+        const cacheKey = `${this.font}:${weight}`;
 
-        if (this.opentypeFont && this.fontCacheKey === cacheKey) {
-            return this.opentypeFont;
+        if (this.opentypeFonts[cacheKey]) {
+            return this.opentypeFonts[cacheKey];
         }
 
         await this.loadWawoff2();
-        const ttfBuffer = await this.fetchAndDecompressFont();
+        const ttfBuffer = await this.fetchAndDecompressFont(weight);
         const font = opentype.parse(ttfBuffer);
 
-        this.opentypeFont = font;
-        this.fontCacheKey = cacheKey;
-
+        this.opentypeFonts[cacheKey] = font;
         return font;
+    }
+
+    /**
+     * Preload all opentype fonts needed for current lines.
+     * @async
+     * @returns {Promise<Object>} Map of weight -> font
+     */
+    async preloadAllWeights() {
+        const weights = new Set();
+        this.lines.forEach(line => {
+            weights.add(line.fontWeight || this.fontWeight);
+        });
+
+        const fontMap = {};
+        await Promise.all(
+            [...weights].map(async (weight) => {
+                fontMap[weight] = await this.getOpentypeFontForWeight(weight);
+            })
+        );
+
+        return fontMap;
     }
 
     /**
@@ -1300,7 +1343,7 @@ class BrandKitGenerator {
      * @returns {Promise<string>} SVG markup
      */
     async generateSVG() {
-        const font = await this.getOpentypeFont();
+        const fontMap = await this.preloadAllWeights();
         const padding = CONFIG.PADDING.SVG;
 
         // Calculate dimensions for all lines
@@ -1310,13 +1353,15 @@ class BrandKitGenerator {
 
         this.lines.forEach((line, lineIndex) => {
             const lineFontSize = (line.fontSize / 100) * this.baseFontSize;
+            const lineFontWeight = line.fontWeight || this.fontWeight;
+            const font = fontMap[lineFontWeight];
             const positions = [];
             let x = 0;
 
             line.letters.forEach((letter) => {
                 const glyph = font.charToGlyph(letter.char);
                 const width = glyph.advanceWidth * (lineFontSize / font.unitsPerEm);
-                positions.push({ letter, x, width, lineFontSize });
+                positions.push({ letter, x, width, lineFontSize, font });
                 x += width + line.letterSpacing;
             });
 
@@ -1367,7 +1412,7 @@ class BrandKitGenerator {
 
             // Draw letters in correct order
             const drawOrder = this.layerOrder === 'left' ? [...positions].reverse() : positions;
-            drawOrder.forEach(({ letter, x, lineFontSize: fontSize }) => {
+            drawOrder.forEach(({ letter, x, lineFontSize: fontSize, font }) => {
                 const color = letter.color || this.defaultColor;
                 const path = font.getPath(letter.char, xOffset + x, y, fontSize);
                 const pathData = path.toPathData(2);

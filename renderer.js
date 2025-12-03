@@ -20,7 +20,8 @@ const Renderer = {
 
         state.lines.forEach((line, index) => {
             const lineFontSize = (line.fontSize / 100) * state.baseFontSize;
-            ctx.font = `${state.fontWeight} ${lineFontSize}px "${state.font}"`;
+            const lineFontWeight = line.fontWeight || state.fontWeight;
+            ctx.font = `${lineFontWeight} ${lineFontSize}px "${state.font}"`;
 
             let lineWidth = 0;
             line.letters.forEach((letter, i) => {
@@ -37,7 +38,7 @@ const Renderer = {
                 totalHeight += state.lineSpacing;
             }
 
-            lineMetrics.push({ lineWidth, lineHeight, lineFontSize, line });
+            lineMetrics.push({ lineWidth, lineHeight, lineFontSize, lineFontWeight, line });
         });
 
         // Calculate scale to fit
@@ -50,12 +51,12 @@ const Renderer = {
         let startY = (size - scaledTotalHeight) / 2;
 
         // Draw each line
-        lineMetrics.forEach(({ lineWidth, lineHeight, lineFontSize, line }) => {
+        lineMetrics.forEach(({ lineWidth, lineHeight, lineFontSize, lineFontWeight, line }) => {
             const scaledFontSize = lineFontSize * scale;
             const scaledLineHeight = lineHeight * scale;
             const scaledLineSpacing = state.lineSpacing * scale;
 
-            ctx.font = `${state.fontWeight} ${scaledFontSize}px "${state.font}"`;
+            ctx.font = `${lineFontWeight} ${scaledFontSize}px "${state.font}"`;
             ctx.textBaseline = 'top';
 
             // Recalculate line width with scaled font

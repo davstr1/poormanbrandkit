@@ -204,14 +204,30 @@ const Exporter = {
 
         const colorList = [...colors].map(c => `  - ${c}`).join('\n');
 
+        // Collect unique font weights from all lines
+        const weights = new Set();
+        state.lines.forEach(line => {
+            weights.add(line.fontWeight || state.fontWeight);
+        });
+        const weightList = [...weights].sort().join(', ');
+
+        // Line details
+        const lineDetails = state.lines.map((line, i) =>
+            `  Line ${i + 1}: "${line.text}" (weight: ${line.fontWeight || state.fontWeight}, size: ${line.fontSize}%, spacing: ${line.letterSpacing}px)`
+        ).join('\n');
+
         return `Brand Kit - ${logoText}
 ================================
 
 Generated with The Poor Man's Brand Kit Maker
 https://github.com/davstr1/poormanbrandkit
 
-Font: ${state.font} (weight: ${state.fontWeight})
-Letter spacing: ${state.lines[0]?.letterSpacing || 0}px
+Font: ${state.font}
+Weights used: ${weightList}
+
+Lines:
+------
+${lineDetails}
 
 Colors:
 -------
@@ -249,7 +265,7 @@ Contents:
   - android-48.png - mdpi launcher
 
 /fonts/
-  - ${state.font.replace(/\s+/g, '-')}-${state.fontWeight}.ttf - Font file
+${[...weights].sort().map(w => `  - ${state.font.replace(/\s+/g, '-')}-${w}.ttf - Font file (weight ${w})`).join('\n')}
   - LICENSE.txt - Font license information
 
 
@@ -286,8 +302,15 @@ Font:
      * @returns {string} License text
      */
     generateFontLicense(state) {
+        // Collect unique weights
+        const weights = new Set();
+        state.lines.forEach(line => {
+            weights.add(line.fontWeight || state.fontWeight);
+        });
+        const weightList = [...weights].sort().join(', ');
+
         return `Font: ${state.font}
-Weight: ${state.fontWeight}
+Weights: ${weightList}
 Source: Google Fonts (https://fonts.google.com/specimen/${state.font.replace(/\s+/g, '+')})
 
 License:
@@ -374,12 +397,21 @@ visit: https://fonts.google.com/specimen/${state.font.replace(/\s+/g, '+')}#lice
             throw new Error('SVG Error: ' + e.message);
         }
 
-        // Add font file
-        onProgress(null, 'Downloading font...');
+        // Add font files (all weights used)
+        onProgress(null, 'Downloading fonts...');
         try {
-            const fontBuffer = await this.fetchFullFont(state.font, state.fontWeight);
-            const fontFileName = `${state.font.replace(/\s+/g, '-')}-${state.fontWeight}.ttf`;
-            zip.folder('fonts').file(fontFileName, fontBuffer);
+            // Collect unique weights from all lines
+            const weights = new Set();
+            state.lines.forEach(line => {
+                weights.add(line.fontWeight || state.fontWeight);
+            });
+
+            // Download each weight
+            for (const weight of weights) {
+                const fontBuffer = await this.fetchFullFont(state.font, weight);
+                const fontFileName = `${state.font.replace(/\s+/g, '-')}-${weight}.ttf`;
+                zip.folder('fonts').file(fontFileName, fontBuffer);
+            }
             zip.folder('fonts').file('LICENSE.txt', this.generateFontLicense(state));
         } catch (e) {
             console.error('Font download failed:', e);
