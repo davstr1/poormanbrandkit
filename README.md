@@ -2,7 +2,7 @@
 
 You don't have product-market fit. You don't have validation. 
 And you probably don't have money.
-Yet you're supposed to burn money on a logo?
+Yet you're supposed to burn money and time on a logo?
 
 Nope. Build your "good enough" brand kit in 30 seconds. Free.
 
