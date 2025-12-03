@@ -107,13 +107,20 @@ const Renderer = {
     renderAppIcon(ctx, size, radiusRatio, state) {
         const radius = size * radiusRatio;
 
-        // Draw rounded rectangle background
+        // Clear canvas to transparent
+        ctx.clearRect(0, 0, size, size);
+
+        // Clip everything to rounded rectangle
+        ctx.save();
         ctx.beginPath();
         ctx.roundRect(0, 0, size, size, radius);
-        ctx.fillStyle = state.appIconBg;
-        ctx.fill();
+        ctx.clip();
 
-        // Draw border if enabled (inset to avoid corner overflow)
+        // Draw background
+        ctx.fillStyle = state.appIconBg;
+        ctx.fillRect(0, 0, size, size);
+
+        // Draw border if enabled
         if (state.appIconBorderEnabled) {
             const borderWidth = Math.max(1, size / 120);
             const inset = borderWidth / 2;
@@ -123,12 +130,6 @@ const Renderer = {
             ctx.lineWidth = borderWidth;
             ctx.stroke();
         }
-
-        // Clip to rounded rectangle for the logo
-        ctx.save();
-        ctx.beginPath();
-        ctx.roundRect(0, 0, size, size, radius);
-        ctx.clip();
 
         // Draw multi-line logo text
         this.renderMultiLineText(ctx, size, state, CONFIG.PADDING.APP_ICON);

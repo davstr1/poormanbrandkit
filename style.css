@@ -986,6 +986,14 @@ h3 {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
 }
 
+#appIconIOS {
+    border-radius: 22%;
+}
+
+#appIconAndroid {
+    border-radius: 15%;
+}
+
 .app-icon-item span {
     font-size: 0.85rem;
     color: var(--color-text-secondary);
