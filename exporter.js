@@ -189,6 +189,21 @@ const Exporter = {
      */
     generateReadme(state) {
         const logoText = state.lines[0]?.text || 'Brand';
+
+        // Collect unique colors
+        const colors = new Set();
+        colors.add(state.defaultColor);
+        state.lines.forEach(line => {
+            line.letters.forEach(letter => {
+                if (letter.color) colors.add(letter.color);
+            });
+        });
+        if (state.bgType === 'color') colors.add(state.bgColor);
+        colors.add(state.appIconBg);
+        if (state.appIconBorderEnabled) colors.add(state.appIconBorder);
+
+        const colorList = [...colors].map(c => `  - ${c}`).join('\n');
+
         return `Brand Kit - ${logoText}
 ================================
 
@@ -197,6 +212,10 @@ https://github.com/davstr1/poormanbrandkit
 
 Font: ${state.font} (weight: ${state.fontWeight})
 Letter spacing: ${state.lines[0]?.letterSpacing || 0}px
+
+Colors:
+-------
+${colorList}
 
 Contents:
 ---------
