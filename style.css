@@ -1273,6 +1273,21 @@ footer {
     text-align: center;
     color: var(--color-text-secondary);
     font-size: 0.9rem;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+}
+
+footer .github-link {
+    color: var(--color-text-secondary);
+    transition: color 0.2s;
+    display: flex;
+}
+
+footer .github-link:hover {
+    color: var(--color-text-primary);
 }
 
 /* Responsive */
