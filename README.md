@@ -6,7 +6,7 @@ Yet you're supposed to burn money on a logo?
 
 Nope. Build your "good enough" brand kit in 30 seconds. Free.
 
-**[Use it now](https://davstr1.github.io/poormanbrandkit/)** — Free. No signup. No shenanigans.
+**[Use it here](https://davstr1.github.io/poormanbrandkit/)** — Free. No signup. No shenanigans.
 
 ![Poor Man's Brand Kit interface](screenshot.png)
 
