@@ -1636,6 +1636,17 @@ footer .github-link:hover {
         margin-top: 30px;
     }
 
+    .mobile-message .mobile-github-link {
+        display: block;
+        margin-top: 20px;
+        color: var(--color-text-secondary);
+        transition: color 0.2s;
+    }
+
+    .mobile-message .mobile-github-link:hover {
+        color: var(--color-text-primary);
+    }
+
     .mobile-message .mobile-hook {
         font-size: 24px;
         font-weight: 600;
