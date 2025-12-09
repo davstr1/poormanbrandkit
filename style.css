@@ -11,14 +11,14 @@
     --color-gray-100: #f8f9fa;
     --color-gray-200: #f0f0f0;
     --color-gray-300: #e0e0e0;
-    --color-gray-400: var(--color-gray-400);
+    --color-gray-400: #bdbdbd;
     --color-gray-500: #999;
 
     /* Colors - Semantic */
-    --color-danger: var(--color-danger);
-    --color-danger-dark: var(--color-danger-dark);
-    --color-success: var(--color-success);
-    --color-accent: var(--color-accent);
+    --color-danger: #dc3545;
+    --color-danger-dark: #c82333;
+    --color-success: #28a745;
+    --color-accent: #007bff;
 
     /* Colors - Background */
     --color-bg-page: #e5e5e5;
