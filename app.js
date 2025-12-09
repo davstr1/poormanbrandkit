@@ -119,8 +119,8 @@ class BrandKitGenerator {
         this.appIconBorderEnabled = true;
 
         // Font cache for opentype.js (supports multiple weights)
-        this.opentypeFonts = {};  // { "fontName:weight": opentypeFont }
-        this.fontLoading = false;
+        this.opentypeFonts = {};  // { "fontName:weight:text": opentypeFont }
+        this.renderCounter = 0;  // For handling concurrent async renders
 
         // DOM Elements
         this.canvas = document.getElementById('logoCanvas');
@@ -622,7 +622,6 @@ class BrandKitGenerator {
     bindEvents() {
         // Font weight
         document.getElementById('fontWeight').addEventListener('change', (e) => {
-            console.log('fontWeight changed to:', e.target.value);
             this.fontWeight = e.target.value;
             this.render();
         });
@@ -1157,11 +1156,8 @@ class BrandKitGenerator {
      * @async
      */
     async renderSvgPreview() {
-        // Prevent concurrent renders
-        if (this.fontLoading) {
-            console.log('renderSvgPreview skipped - fontLoading is true');
-            return;
-        }
+        // Use a render ID to handle concurrent renders - only the latest wins
+        const renderId = ++this.renderCounter;
 
         const padding = CONFIG.PADDING.SVG;
 
@@ -1207,15 +1203,16 @@ class BrandKitGenerator {
             : `<text x="50%" y="50%" text-anchor="middle" fill="#999" font-size="14">Loading...</text>`;
 
         // Load all font weights asynchronously
-        this.fontLoading = true;
         try {
             const { fontMap, textSnapshot } = await this.preloadAllWeights();
+
+            // Check if a newer render was started - abort this one
+            if (renderId !== this.renderCounter) return;
 
             // Check if text changed during font loading (race condition fix)
             const currentText = this.lines.map(l => l.text).join('');
             if (currentText !== textSnapshot) {
                 // Text changed while loading - re-render with new text
-                this.fontLoading = false;
                 this.renderSvgPreview();
                 return;
             }
@@ -1292,11 +1289,12 @@ class BrandKitGenerator {
 
         } catch (error) {
             console.error('Error rendering SVG preview:', error);
-            this.svgElement.innerHTML = this.bgType === 'color'
-                ? `<rect width="100%" height="100%" fill="${this.bgColor}"/><text x="50%" y="50%" text-anchor="middle" fill="#f00" font-size="12">Loading error</text>`
-                : `<text x="50%" y="50%" text-anchor="middle" fill="#f00" font-size="12">Loading error</text>`;
-        } finally {
-            this.fontLoading = false;
+            // Only show error if this is still the current render
+            if (renderId === this.renderCounter) {
+                this.svgElement.innerHTML = this.bgType === 'color'
+                    ? `<rect width="100%" height="100%" fill="${this.bgColor}"/><text x="50%" y="50%" text-anchor="middle" fill="#f00" font-size="12">Loading error</text>`
+                    : `<text x="50%" y="50%" text-anchor="middle" fill="#f00" font-size="12">Loading error</text>`;
+            }
         }
     }
 
