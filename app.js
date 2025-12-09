@@ -83,7 +83,6 @@ class BrandKitGenerator {
             }
         ];
         this.font = CONFIG.DEFAULTS.FONT;
-        this.fontWeight = CONFIG.DEFAULTS.FONT_WEIGHT;  // Global default, used for new lines
         this.availableWeights = [300, 400, 500, 600, 700, 800, 900];  // Updated when font changes
         this.baseFontSize = CONFIG.DEFAULTS.BASE_FONT_SIZE;
         this.lineSpacing = CONFIG.DEFAULTS.LINE_SPACING;
@@ -121,7 +120,6 @@ class BrandKitGenerator {
         // Font cache for opentype.js (supports multiple weights)
         this.opentypeFonts = {};  // { "fontName:weight:text": opentypeFont }
         this.renderCounter = 0;  // For handling concurrent async renders
-        this.weightChangeHandler = null;  // Stored for removeEventListener
 
         // DOM Elements
         this.canvas = document.getElementById('logoCanvas');
@@ -346,7 +344,7 @@ class BrandKitGenerator {
     }
 
     /**
-     * Update all weight selectors (global + per-line) based on available weights.
+     * Update per-line weight selectors based on available weights.
      */
     updateWeightSelectors() {
         const weightLabels = {
@@ -368,32 +366,16 @@ class BrandKitGenerator {
             }).join('');
         };
 
-        // Update global weight selector
-        const globalSelect = document.getElementById('fontWeight');
-        if (globalSelect) {
-            // If current weight not available, pick closest
-            if (!this.availableWeights.includes(parseInt(this.fontWeight))) {
-                this.fontWeight = String(this.findClosestWeight(this.fontWeight));
-            }
-            globalSelect.innerHTML = buildOptions(this.fontWeight);
-
-            // Re-attach event listener (innerHTML may detach it in some browsers)
-            if (this.weightChangeHandler) {
-                globalSelect.removeEventListener('change', this.weightChangeHandler);
-                globalSelect.addEventListener('change', this.weightChangeHandler);
-            }
-        }
-
         // Update per-line weight selectors
         document.querySelectorAll('.line-font-weight').forEach((select, index) => {
             const line = this.lines[index];
             if (line) {
-                const lineWeight = line.fontWeight || this.fontWeight;
+                const lineWeight = line.fontWeight || CONFIG.DEFAULTS.FONT_WEIGHT;
                 // If line weight not available, pick closest
                 if (!this.availableWeights.includes(parseInt(lineWeight))) {
                     line.fontWeight = String(this.findClosestWeight(lineWeight));
                 }
-                select.innerHTML = buildOptions(line.fontWeight || this.fontWeight);
+                select.innerHTML = buildOptions(line.fontWeight);
             }
         });
     }
@@ -627,13 +609,6 @@ class BrandKitGenerator {
     }
 
     bindEvents() {
-        // Font weight - handler stored for cleanup/re-attach in updateWeightSelectors
-        this.weightChangeHandler = (e) => {
-            this.fontWeight = e.target.value;
-            this.render();
-        };
-        document.getElementById('fontWeight').addEventListener('change', this.weightChangeHandler);
-
         // Base font size (global)
         const baseFontSizeEl = document.getElementById('baseFontSize');
         if (baseFontSizeEl) {
@@ -986,7 +961,7 @@ class BrandKitGenerator {
             // Font weight selector
             const weightControl = document.createElement('div');
             weightControl.className = 'line-control';
-            const currentWeight = line.fontWeight || this.fontWeight;
+            const currentWeight = line.fontWeight || CONFIG.DEFAULTS.FONT_WEIGHT;
             const weightLabels = {
                 100: 'Thin', 200: 'Extra-Light', 300: 'Light', 400: 'Regular',
                 500: 'Medium', 600: 'Semi-Bold', 700: 'Bold', 800: 'Extra-Bold', 900: 'Black'
@@ -1056,12 +1031,16 @@ class BrandKitGenerator {
     addLine() {
         if (this.lines.length >= CONFIG.MAX_LINES) return;
 
+        // New line inherits weight from last line, or uses default
+        const lastLine = this.lines[this.lines.length - 1];
+        const newWeight = lastLine?.fontWeight || CONFIG.DEFAULTS.FONT_WEIGHT;
+
         this.lines.push({
             text: 'Text',
             letters: [{ char: 'T', color: null }, { char: 'e', color: null }, { char: 'x', color: null }, { char: 't', color: null }],
             fontSize: 100,
             letterSpacing: 0,
-            fontWeight: this.fontWeight
+            fontWeight: newWeight
         });
 
         this.renderLineEditors();
@@ -1130,7 +1109,6 @@ class BrandKitGenerator {
         return {
             lines: this.lines,
             font: this.font,
-            fontWeight: this.fontWeight,
             baseFontSize: this.baseFontSize,
             lineSpacing: this.lineSpacing,
             horizontalAlign: this.horizontalAlign,
@@ -1176,7 +1154,7 @@ class BrandKitGenerator {
 
         this.lines.forEach((line, index) => {
             const lineFontSize = (line.fontSize / 100) * this.baseFontSize;
-            const lineFontWeight = line.fontWeight || this.fontWeight;
+            const lineFontWeight = line.fontWeight || CONFIG.DEFAULTS.FONT_WEIGHT;
             this.ctx.font = `${lineFontWeight} ${lineFontSize}px "${this.font}"`;
 
             let lineWidth = 0;
@@ -1231,7 +1209,7 @@ class BrandKitGenerator {
 
             this.lines.forEach((line, lineIndex) => {
                 const lineFontSize = (line.fontSize / 100) * this.baseFontSize;
-                let lineFontWeight = line.fontWeight || this.fontWeight;
+                let lineFontWeight = line.fontWeight || CONFIG.DEFAULTS.FONT_WEIGHT;
                 // Use the same validated weight as preloadAllWeights
                 if (!this.availableWeights.includes(parseInt(lineFontWeight))) {
                     lineFontWeight = String(this.findClosestWeight(lineFontWeight));
@@ -1443,7 +1421,7 @@ class BrandKitGenerator {
 
         const weights = new Set();
         this.lines.forEach(line => {
-            let weight = line.fontWeight || this.fontWeight;
+            let weight = line.fontWeight || CONFIG.DEFAULTS.FONT_WEIGHT;
             // Ensure weight is valid for this font
             if (!this.availableWeights.includes(parseInt(weight))) {
                 weight = String(this.findClosestWeight(weight));
@@ -1517,7 +1495,7 @@ class BrandKitGenerator {
 
         this.lines.forEach((line, lineIndex) => {
             const lineFontSize = (line.fontSize / 100) * this.baseFontSize;
-            const lineFontWeight = line.fontWeight || this.fontWeight;
+            const lineFontWeight = line.fontWeight || CONFIG.DEFAULTS.FONT_WEIGHT;
             const font = fontMap[lineFontWeight];
             const positions = [];
             let x = 0;
@@ -1669,7 +1647,7 @@ class BrandKitGenerator {
             // Collect unique weights from all lines
             const weights = new Set();
             this.lines.forEach(line => {
-                weights.add(line.fontWeight || this.fontWeight);
+                weights.add(line.fontWeight || CONFIG.DEFAULTS.FONT_WEIGHT);
             });
 
             // Download each weight
@@ -1699,6 +1677,11 @@ visit: https://fonts.google.com/specimen/${this.font.replace(/\s+/g, '+')}#licen
             // Non-blocking error - continue without font
         }
 
+        // Collect weights used in lines for README
+        const usedWeights = [...new Set(this.lines.map(l => l.fontWeight || CONFIG.DEFAULTS.FONT_WEIGHT))].sort();
+        const weightsStr = usedWeights.join(', ');
+        const fontFiles = usedWeights.map(w => `  - ${this.font.replace(/\s+/g, '-')}-${w}.ttf`).join('\n');
+
         // Add README
         const readme = `Brand Kit - ${this.logoText}
 ================================
@@ -1706,8 +1689,7 @@ visit: https://fonts.google.com/specimen/${this.font.replace(/\s+/g, '+')}#licen
 Generated with The Poor Man's Brand Kit Maker
 https://github.com/davstr1/poormanbrandkit
 
-Font: ${this.font} (weight: ${this.fontWeight})
-Letter spacing: ${this.letterSpacing}px
+Font: ${this.font} (weights: ${weightsStr})
 
 Contents:
 ---------
@@ -1741,7 +1723,7 @@ Contents:
   - android-48.png - mdpi launcher
 
 /fonts/
-  - ${this.font.replace(/\s+/g, '-')}-${this.fontWeight}.ttf - Font file
+${fontFiles}
   - LICENSE.txt - Font license information
 
 
@@ -1904,7 +1886,6 @@ Font:
         this.lineSpacing = parsed.lineSpacing;
         this.horizontalAlign = parsed.horizontalAlign;
         this.font = parsed.font;
-        this.fontWeight = parsed.fontWeight;
         this.defaultColor = parsed.defaultColor;
         this.bgType = parsed.bgType;
         this.bgColor = parsed.bgColor;
@@ -1916,7 +1897,6 @@ Font:
         // Update UI controls
         document.getElementById('tabTitle').textContent = this.lines[0]?.text || 'Brand';
         document.getElementById('fontDisplayText').textContent = this.font;
-        document.getElementById('fontWeight').value = this.fontWeight;
         document.getElementById('baseFontSize').value = this.baseFontSize;
         document.getElementById('baseFontSizeValue').textContent = `${this.baseFontSize}px`;
         document.getElementById('lineSpacing').value = this.lineSpacing;
@@ -1957,7 +1937,7 @@ Font:
         const fontFamily = this.font.replace(/ /g, '+');
         const weights = new Set();
         this.lines.forEach(line => {
-            weights.add(line.fontWeight || this.fontWeight);
+            weights.add(line.fontWeight || CONFIG.DEFAULTS.FONT_WEIGHT);
         });
         const weightsStr = [...weights].sort().join(';');
         const linkId = `font-weights-${fontFamily}-config`;

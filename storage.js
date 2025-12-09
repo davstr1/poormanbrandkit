@@ -11,16 +11,15 @@ const Storage = {
      */
     getConfigData(state) {
         return {
-            // New multi-line format
+            // Multi-line format (each line has its own fontWeight)
             lines: state.lines.map(line => ({
                 text: line.text,
                 letters: line.letters.map(l => ({ char: l.char, color: l.color })),
                 fontSize: line.fontSize,
                 letterSpacing: line.letterSpacing,
-                fontWeight: line.fontWeight
+                fontWeight: line.fontWeight || CONFIG.DEFAULTS.FONT_WEIGHT
             })),
             font: state.font,
-            fontWeight: state.fontWeight,
             baseFontSize: state.baseFontSize,
             lineSpacing: state.lineSpacing,
             horizontalAlign: state.horizontalAlign,
@@ -31,12 +30,7 @@ const Storage = {
             appIconBg: state.appIconBg,
             appIconBorder: state.appIconBorder,
             appIconBorderEnabled: state.appIconBorderEnabled,
-            timestamp: Date.now(),
-            // Legacy fields for backward compatibility
-            logoText: state.lines[0]?.text || 'Brand',
-            letters: (state.lines[0]?.letters || []).map(l => ({ char: l.char, color: l.color })),
-            fontSize: state.baseFontSize,
-            letterSpacing: state.lines[0]?.letterSpacing || 0
+            timestamp: Date.now()
         };
     },
 
@@ -85,6 +79,9 @@ const Storage = {
     parseConfig(config) {
         let lines, baseFontSize, lineSpacing, horizontalAlign;
 
+        // For backward compatibility: if config has global fontWeight, use it as fallback
+        const legacyWeight = config.fontWeight || CONFIG.DEFAULTS.FONT_WEIGHT;
+
         // Check if new multi-line format or legacy format
         if (config.lines && Array.isArray(config.lines)) {
             // New multi-line format
@@ -93,7 +90,7 @@ const Storage = {
                 letters: line.letters.map(l => ({ char: l.char, color: l.color })),
                 fontSize: line.fontSize || 100,
                 letterSpacing: line.letterSpacing || 0,
-                fontWeight: line.fontWeight || config.fontWeight || CONFIG.DEFAULTS.FONT_WEIGHT
+                fontWeight: line.fontWeight || legacyWeight
             }));
             baseFontSize = config.baseFontSize || CONFIG.DEFAULTS.BASE_FONT_SIZE;
             lineSpacing = config.lineSpacing || CONFIG.DEFAULTS.LINE_SPACING;
@@ -107,7 +104,7 @@ const Storage = {
                     : [],
                 fontSize: 100,
                 letterSpacing: config.letterSpacing || 0,
-                fontWeight: config.fontWeight || CONFIG.DEFAULTS.FONT_WEIGHT
+                fontWeight: legacyWeight
             }];
             baseFontSize = config.fontSize || CONFIG.DEFAULTS.BASE_FONT_SIZE;
             lineSpacing = CONFIG.DEFAULTS.LINE_SPACING;
@@ -120,7 +117,6 @@ const Storage = {
             lineSpacing,
             horizontalAlign,
             font: config.font || CONFIG.DEFAULTS.FONT,
-            fontWeight: config.fontWeight || CONFIG.DEFAULTS.FONT_WEIGHT,
             defaultColor: config.defaultColor || CONFIG.DEFAULTS.DEFAULT_COLOR,
             bgType: config.bgType || CONFIG.DEFAULTS.BG_TYPE,
             bgColor: config.bgColor || CONFIG.DEFAULTS.BG_COLOR,

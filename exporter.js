@@ -242,13 +242,13 @@ const Exporter = {
         // Collect unique font weights from all lines
         const weights = new Set();
         state.lines.forEach(line => {
-            weights.add(line.fontWeight || state.fontWeight);
+            weights.add(line.fontWeight || CONFIG.DEFAULTS.FONT_WEIGHT);
         });
         const weightList = [...weights].sort().join(', ');
 
         // Line details
         const lineDetails = state.lines.map((line, i) =>
-            `  Line ${i + 1}: "${line.text}" (weight: ${line.fontWeight || state.fontWeight}, size: ${line.fontSize}%, spacing: ${line.letterSpacing}px)`
+            `  Line ${i + 1}: "${line.text}" (weight: ${line.fontWeight || CONFIG.DEFAULTS.FONT_WEIGHT}, size: ${line.fontSize}%, spacing: ${line.letterSpacing}px)`
         ).join('\n');
 
         return `Brand Kit - ${logoText}
@@ -340,7 +340,7 @@ Font:
         // Collect unique weights
         const weights = new Set();
         state.lines.forEach(line => {
-            weights.add(line.fontWeight || state.fontWeight);
+            weights.add(line.fontWeight || CONFIG.DEFAULTS.FONT_WEIGHT);
         });
         const weightList = [...weights].sort().join(', ');
 
@@ -438,7 +438,7 @@ visit: https://fonts.google.com/specimen/${state.font.replace(/\s+/g, '+')}#lice
             // Collect unique weights from all lines
             const weights = new Set();
             state.lines.forEach(line => {
-                weights.add(line.fontWeight || state.fontWeight);
+                weights.add(line.fontWeight || CONFIG.DEFAULTS.FONT_WEIGHT);
             });
 
             // Download each weight
