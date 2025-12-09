@@ -1223,7 +1223,11 @@ class BrandKitGenerator {
 
             this.lines.forEach((line, lineIndex) => {
                 const lineFontSize = (line.fontSize / 100) * this.baseFontSize;
-                const lineFontWeight = line.fontWeight || this.fontWeight;
+                let lineFontWeight = line.fontWeight || this.fontWeight;
+                // Use the same validated weight as preloadAllWeights
+                if (!this.availableWeights.includes(parseInt(lineFontWeight))) {
+                    lineFontWeight = String(this.findClosestWeight(lineFontWeight));
+                }
                 const font = fontMap[lineFontWeight];
                 const positions = [];
                 let x = 0;
@@ -1362,13 +1366,19 @@ class BrandKitGenerator {
         const cssUrl = `https://fonts.googleapis.com/css2?family=${fontFamily}:wght@${weight}&text=${textParam}&display=swap`;
 
         const cssResponse = await fetch(cssUrl);
+        if (!cssResponse.ok) {
+            throw new Error(`Font CSS request failed: ${cssResponse.status} for ${fontFamily} weight ${weight}`);
+        }
         const css = await cssResponse.text();
 
         const urlMatch = css.match(/url\(([^)]+)\)/);
-        if (!urlMatch) throw new Error('Could not find font URL in CSS');
+        if (!urlMatch) throw new Error(`Could not find font URL in CSS for ${fontFamily} weight ${weight}`);
 
         const fontUrl = urlMatch[1].replace(/['"]/g, '');
         const fontResponse = await fetch(fontUrl);
+        if (!fontResponse.ok) {
+            throw new Error(`Font file request failed: ${fontResponse.status}`);
+        }
         const woff2Buffer = await fontResponse.arrayBuffer();
 
         const ttfUint8 = Module.decompress(woff2Buffer);
@@ -1408,7 +1418,12 @@ class BrandKitGenerator {
 
         const weights = new Set();
         this.lines.forEach(line => {
-            weights.add(line.fontWeight || this.fontWeight);
+            let weight = line.fontWeight || this.fontWeight;
+            // Ensure weight is valid for this font
+            if (!this.availableWeights.includes(parseInt(weight))) {
+                weight = String(this.findClosestWeight(weight));
+            }
+            weights.add(weight);
         });
 
         const fontMap = {};
