@@ -121,6 +121,7 @@ class BrandKitGenerator {
         // Font cache for opentype.js (supports multiple weights)
         this.opentypeFonts = {};  // { "fontName:weight:text": opentypeFont }
         this.renderCounter = 0;  // For handling concurrent async renders
+        this.weightChangeHandler = null;  // Stored for removeEventListener
 
         // DOM Elements
         this.canvas = document.getElementById('logoCanvas');
@@ -376,11 +377,11 @@ class BrandKitGenerator {
             }
             globalSelect.innerHTML = buildOptions(this.fontWeight);
 
-            // Re-bind the change event (innerHTML may affect it in some browsers)
-            globalSelect.onchange = (e) => {
-                this.fontWeight = e.target.value;
-                this.render();
-            };
+            // Re-attach event listener (innerHTML may detach it in some browsers)
+            if (this.weightChangeHandler) {
+                globalSelect.removeEventListener('change', this.weightChangeHandler);
+                globalSelect.addEventListener('change', this.weightChangeHandler);
+            }
         }
 
         // Update per-line weight selectors
@@ -626,11 +627,12 @@ class BrandKitGenerator {
     }
 
     bindEvents() {
-        // Font weight
-        document.getElementById('fontWeight').addEventListener('change', (e) => {
+        // Font weight - handler stored for cleanup/re-attach in updateWeightSelectors
+        this.weightChangeHandler = (e) => {
             this.fontWeight = e.target.value;
             this.render();
-        });
+        };
+        document.getElementById('fontWeight').addEventListener('change', this.weightChangeHandler);
 
         // Base font size (global)
         const baseFontSizeEl = document.getElementById('baseFontSize');
