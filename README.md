@@ -53,6 +53,18 @@ This is for my people grinding at night, with zero budget and oversized dreams.
 
 That's it.
 
+## Local Development
+
+Opening `index.html` directly (`file://`) won't work — browsers block cross-origin requests (Google Fonts API) from `file://` origins for security reasons.
+
+Run the dev server:
+
+```bash
+node server.js
+```
+
+Then open http://localhost:3847
+
 ## Tech Stack
 
 - Vanilla JS (no framework)
