@@ -1111,7 +1111,16 @@ class BrandKitGenerator {
         // Load all font weights asynchronously
         this.fontLoading = true;
         try {
-            const fontMap = await this.preloadAllWeights();
+            const { fontMap, textSnapshot } = await this.preloadAllWeights();
+
+            // Check if text changed during font loading (race condition fix)
+            const currentText = this.lines.map(l => l.text).join('');
+            if (currentText !== textSnapshot) {
+                // Text changed while loading - re-render with new text
+                this.fontLoading = false;
+                this.renderSvgPreview();
+                return;
+            }
 
             // Recalculate with opentype for accurate SVG
             let maxOpentypeWidth = 0;
@@ -1248,11 +1257,11 @@ class BrandKitGenerator {
      * Fetch and decompress font for current text (subsetted).
      * @async
      * @param {string} weight - Font weight to fetch
+     * @param {string} allText - Text to include for subsetting
      * @returns {Promise<ArrayBuffer>} TTF font buffer
      */
-    async fetchAndDecompressFont(weight) {
+    async fetchAndDecompressFont(weight, allText) {
         const fontFamily = this.font.replace(/ /g, '+');
-        const allText = this.lines.map(l => l.text).join('');
         const textParam = encodeURIComponent(allText);
         const cssUrl = `https://fonts.googleapis.com/css2?family=${fontFamily}:wght@${weight}&text=${textParam}&display=swap`;
 
@@ -1274,17 +1283,18 @@ class BrandKitGenerator {
      * Get cached opentype font for a specific weight, or load it.
      * @async
      * @param {string} weight - Font weight to get
+     * @param {string} allText - Text used for subsetting (included in cache key)
      * @returns {Promise<Object>} Opentype.js font object
      */
-    async getOpentypeFontForWeight(weight) {
-        const cacheKey = `${this.font}:${weight}`;
+    async getOpentypeFontForWeight(weight, allText) {
+        const cacheKey = `${this.font}:${weight}:${allText}`;
 
         if (this.opentypeFonts[cacheKey]) {
             return this.opentypeFonts[cacheKey];
         }
 
         await this.loadWawoff2();
-        const ttfBuffer = await this.fetchAndDecompressFont(weight);
+        const ttfBuffer = await this.fetchAndDecompressFont(weight, allText);
         const font = opentype.parse(ttfBuffer);
 
         this.opentypeFonts[cacheKey] = font;
@@ -1294,9 +1304,12 @@ class BrandKitGenerator {
     /**
      * Preload all opentype fonts needed for current lines.
      * @async
-     * @returns {Promise<Object>} Map of weight -> font
+     * @returns {Promise<Object>} { fontMap: weight -> font, textSnapshot: string }
      */
     async preloadAllWeights() {
+        // Capture current state for subsetting and race condition detection
+        const textSnapshot = this.lines.map(l => l.text).join('');
+
         const weights = new Set();
         this.lines.forEach(line => {
             weights.add(line.fontWeight || this.fontWeight);
@@ -1305,11 +1318,11 @@ class BrandKitGenerator {
         const fontMap = {};
         await Promise.all(
             [...weights].map(async (weight) => {
-                fontMap[weight] = await this.getOpentypeFontForWeight(weight);
+                fontMap[weight] = await this.getOpentypeFontForWeight(weight, textSnapshot);
             })
         );
 
-        return fontMap;
+        return { fontMap, textSnapshot };
     }
 
     /**
@@ -1344,7 +1357,7 @@ class BrandKitGenerator {
      * @returns {Promise<string>} SVG markup
      */
     async generateSVG() {
-        const fontMap = await this.preloadAllWeights();
+        const { fontMap } = await this.preloadAllWeights();
         const padding = CONFIG.PADDING.SVG;
 
         // Calculate dimensions for all lines
