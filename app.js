@@ -375,6 +375,12 @@ class BrandKitGenerator {
                 this.fontWeight = String(this.findClosestWeight(this.fontWeight));
             }
             globalSelect.innerHTML = buildOptions(this.fontWeight);
+
+            // Re-bind the change event (innerHTML may affect it in some browsers)
+            globalSelect.onchange = (e) => {
+                this.fontWeight = e.target.value;
+                this.render();
+            };
         }
 
         // Update per-line weight selectors
