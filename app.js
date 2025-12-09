@@ -622,6 +622,7 @@ class BrandKitGenerator {
     bindEvents() {
         // Font weight
         document.getElementById('fontWeight').addEventListener('change', (e) => {
+            console.log('fontWeight changed to:', e.target.value);
             this.fontWeight = e.target.value;
             this.render();
         });
