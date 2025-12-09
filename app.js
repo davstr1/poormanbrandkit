@@ -84,6 +84,7 @@ class BrandKitGenerator {
         ];
         this.font = CONFIG.DEFAULTS.FONT;
         this.fontWeight = CONFIG.DEFAULTS.FONT_WEIGHT;  // Global default, used for new lines
+        this.availableWeights = [300, 400, 500, 600, 700, 800, 900];  // Updated when font changes
         this.baseFontSize = CONFIG.DEFAULTS.BASE_FONT_SIZE;
         this.lineSpacing = CONFIG.DEFAULTS.LINE_SPACING;
         this.horizontalAlign = CONFIG.DEFAULTS.HORIZONTAL_ALIGN;
@@ -288,17 +289,51 @@ class BrandKitGenerator {
     }
 
     /**
+     * Discover available weights for a font by fetching Google Fonts CSS.
+     * @param {string} fontName - The font family name
+     * @returns {Promise<number[]>} Array of available weights
+     */
+    async discoverFontWeights(fontName) {
+        const fontFamily = fontName.replace(/ /g, '+');
+        const cssUrl = `https://fonts.googleapis.com/css2?family=${fontFamily}:wght@100..900&display=swap`;
+
+        try {
+            const response = await fetch(cssUrl);
+            if (!response.ok) return [400, 700]; // Fallback
+            const css = await response.text();
+
+            // Extract font-weight values from @font-face rules
+            const weights = [...css.matchAll(/font-weight:\s*(\d+)/g)]
+                .map(m => parseInt(m[1]))
+                .filter((v, i, a) => a.indexOf(v) === i) // unique
+                .sort((a, b) => a - b);
+
+            return weights.length > 0 ? weights : [400, 700];
+        } catch (e) {
+            console.error('Failed to discover font weights:', e);
+            return [400, 700]; // Fallback
+        }
+    }
+
+    /**
      * Load all font weights for a specific font family.
      * @param {string} fontName - The font family name
      */
-    loadFontWeights(fontName) {
+    async loadFontWeights(fontName) {
         const fontFamily = fontName.replace(/ /g, '+');
-        const weights = '300;400;500;600;700;800;900';
         const linkId = `font-weights-${fontFamily}`;
 
-        // Don't reload if already loaded
-        if (document.getElementById(linkId)) return;
+        // Discover available weights
+        this.availableWeights = await this.discoverFontWeights(fontName);
+        this.updateWeightSelectors();
 
+        // Don't reload CSS if already loaded
+        if (document.getElementById(linkId)) {
+            this.render();
+            return;
+        }
+
+        const weights = this.availableWeights.join(';');
         const link = document.createElement('link');
         link.id = linkId;
         link.href = `https://fonts.googleapis.com/css2?family=${fontFamily}:wght@${weights}&display=swap`;
@@ -306,6 +341,65 @@ class BrandKitGenerator {
         document.head.appendChild(link);
 
         link.onload = () => this.render();
+    }
+
+    /**
+     * Update all weight selectors (global + per-line) based on available weights.
+     */
+    updateWeightSelectors() {
+        const weightLabels = {
+            100: 'Thin',
+            200: 'Extra-Light',
+            300: 'Light',
+            400: 'Regular',
+            500: 'Medium',
+            600: 'Semi-Bold',
+            700: 'Bold',
+            800: 'Extra-Bold',
+            900: 'Black'
+        };
+
+        const buildOptions = (selectedWeight) => {
+            return this.availableWeights.map(w => {
+                const selected = String(w) === String(selectedWeight) ? ' selected' : '';
+                return `<option value="${w}"${selected}>${weightLabels[w] || w}</option>`;
+            }).join('');
+        };
+
+        // Update global weight selector
+        const globalSelect = document.getElementById('fontWeight');
+        if (globalSelect) {
+            // If current weight not available, pick closest
+            if (!this.availableWeights.includes(parseInt(this.fontWeight))) {
+                this.fontWeight = String(this.findClosestWeight(this.fontWeight));
+            }
+            globalSelect.innerHTML = buildOptions(this.fontWeight);
+        }
+
+        // Update per-line weight selectors
+        document.querySelectorAll('.line-font-weight').forEach((select, index) => {
+            const line = this.lines[index];
+            if (line) {
+                const lineWeight = line.fontWeight || this.fontWeight;
+                // If line weight not available, pick closest
+                if (!this.availableWeights.includes(parseInt(lineWeight))) {
+                    line.fontWeight = String(this.findClosestWeight(lineWeight));
+                }
+                select.innerHTML = buildOptions(line.fontWeight || this.fontWeight);
+            }
+        });
+    }
+
+    /**
+     * Find the closest available weight to the requested one.
+     * @param {string|number} requestedWeight
+     * @returns {number}
+     */
+    findClosestWeight(requestedWeight) {
+        const requested = parseInt(requestedWeight);
+        return this.availableWeights.reduce((prev, curr) =>
+            Math.abs(curr - requested) < Math.abs(prev - requested) ? curr : prev
+        );
     }
 
     setupFontSelector() {
@@ -885,17 +979,17 @@ class BrandKitGenerator {
             const weightControl = document.createElement('div');
             weightControl.className = 'line-control';
             const currentWeight = line.fontWeight || this.fontWeight;
+            const weightLabels = {
+                100: 'Thin', 200: 'Extra-Light', 300: 'Light', 400: 'Regular',
+                500: 'Medium', 600: 'Semi-Bold', 700: 'Bold', 800: 'Extra-Bold', 900: 'Black'
+            };
+            const weightOptions = this.availableWeights.map(w => {
+                const selected = String(w) === String(currentWeight) ? 'selected' : '';
+                return `<option value="${w}" ${selected}>${weightLabels[w] || w}</option>`;
+            }).join('');
             weightControl.innerHTML = `
                 <label>Weight</label>
-                <select class="line-font-weight">
-                    <option value="300" ${currentWeight === '300' ? 'selected' : ''}>Light</option>
-                    <option value="400" ${currentWeight === '400' ? 'selected' : ''}>Regular</option>
-                    <option value="500" ${currentWeight === '500' ? 'selected' : ''}>Medium</option>
-                    <option value="600" ${currentWeight === '600' ? 'selected' : ''}>Semi-Bold</option>
-                    <option value="700" ${currentWeight === '700' ? 'selected' : ''}>Bold</option>
-                    <option value="800" ${currentWeight === '800' ? 'selected' : ''}>Extra-Bold</option>
-                    <option value="900" ${currentWeight === '900' ? 'selected' : ''}>Black</option>
-                </select>
+                <select class="line-font-weight">${weightOptions}</select>
             `;
             const weightSelect = weightControl.querySelector('.line-font-weight');
             weightSelect.addEventListener('change', (e) => {
