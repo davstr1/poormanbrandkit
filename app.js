@@ -1157,7 +1157,10 @@ class BrandKitGenerator {
      */
     async renderSvgPreview() {
         // Prevent concurrent renders
-        if (this.fontLoading) return;
+        if (this.fontLoading) {
+            console.log('renderSvgPreview skipped - fontLoading is true');
+            return;
+        }
 
         const padding = CONFIG.PADDING.SVG;
 
