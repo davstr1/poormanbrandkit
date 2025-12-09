@@ -270,9 +270,6 @@ class BrandKitGenerator {
     selectFont(fontName) {
         this.font = fontName;
 
-        // Load all weights for this font
-        this.loadFontWeights(fontName);
-
         // Update display - show font name normally
         document.getElementById('fontDisplayText').textContent = fontName;
 
@@ -284,8 +281,8 @@ class BrandKitGenerator {
         // Close dropdown
         document.getElementById('fontSelector').classList.remove('open');
 
-        // Render
-        this.render();
+        // Load all weights for this font (will call render() when done)
+        this.loadFontWeights(fontName);
     }
 
     /**
@@ -343,6 +340,8 @@ class BrandKitGenerator {
         document.head.appendChild(link);
 
         link.onload = () => this.render();
+        // Fallback if onload doesn't fire (cached fonts)
+        setTimeout(() => this.render(), 500);
     }
 
     /**
@@ -566,9 +565,6 @@ class BrandKitGenerator {
     selectFontFromPopover(fontName) {
         this.font = fontName;
 
-        // Load all weights for this font
-        this.loadFontWeights(fontName);
-
         // Update display
         document.getElementById('fontDisplayText').textContent = fontName;
 
@@ -586,9 +582,11 @@ class BrandKitGenerator {
             opt.classList.toggle('selected', opt.dataset.font === fontName);
         });
 
-        // Close popover and render
+        // Close popover
         this.closeFontPopover();
-        this.render();
+
+        // Load all weights for this font (will call render() when done)
+        this.loadFontWeights(fontName);
     }
 
     filterFontCards(query) {
