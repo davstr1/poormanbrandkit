@@ -1344,9 +1344,16 @@ class BrandKitGenerator {
      * @async
      */
     async loadWawoff2() {
+        // Already loaded
         if (window.wawoff2Ready) return;
 
-        return new Promise((resolve, reject) => {
+        // Already loading - wait for it
+        if (window.wawoff2Loading) {
+            return window.wawoff2Loading;
+        }
+
+        // Start loading
+        window.wawoff2Loading = new Promise((resolve, reject) => {
             window.Module = {
                 onRuntimeInitialized: () => {
                     window.wawoff2Ready = true;
@@ -1359,6 +1366,8 @@ class BrandKitGenerator {
             script.onerror = () => reject(new Error('Failed to load wawoff2'));
             document.head.appendChild(script);
         });
+
+        return window.wawoff2Loading;
     }
 
     /**
@@ -1389,7 +1398,15 @@ class BrandKitGenerator {
         }
         const woff2Buffer = await fontResponse.arrayBuffer();
 
+        // Validate we got actual font data (not an error page)
+        if (woff2Buffer.byteLength < 100) {
+            throw new Error(`Font file too small (${woff2Buffer.byteLength} bytes) - likely an error response`);
+        }
+
         const ttfUint8 = Module.decompress(woff2Buffer);
+        if (!ttfUint8) {
+            throw new Error(`WOFF2 decompression failed for ${fontFamily} weight ${weight}`);
+        }
         return ttfUint8.buffer.slice(ttfUint8.byteOffset, ttfUint8.byteOffset + ttfUint8.byteLength);
     }
 
@@ -1457,16 +1474,30 @@ class BrandKitGenerator {
         const cssUrl = `https://fonts.googleapis.com/css2?family=${fontFamily}:wght@${weight}&display=swap`;
 
         const cssResponse = await fetch(cssUrl);
+        if (!cssResponse.ok) {
+            throw new Error(`Font CSS request failed: ${cssResponse.status} for ${fontFamily} weight ${weight}`);
+        }
         const css = await cssResponse.text();
 
         const urlMatch = css.match(/url\(([^)]+)\)/);
-        if (!urlMatch) throw new Error('Could not find font URL in CSS');
+        if (!urlMatch) throw new Error(`Could not find font URL in CSS for ${fontFamily} weight ${weight}`);
 
         const fontUrl = urlMatch[1].replace(/['"]/g, '');
         const fontResponse = await fetch(fontUrl);
+        if (!fontResponse.ok) {
+            throw new Error(`Font file request failed: ${fontResponse.status}`);
+        }
         const woff2Buffer = await fontResponse.arrayBuffer();
 
+        // Validate we got actual font data
+        if (woff2Buffer.byteLength < 100) {
+            throw new Error(`Font file too small (${woff2Buffer.byteLength} bytes) - likely an error response`);
+        }
+
         const ttfUint8 = Module.decompress(woff2Buffer);
+        if (!ttfUint8) {
+            throw new Error(`WOFF2 decompression failed for ${fontFamily} weight ${weight}`);
+        }
         return ttfUint8.buffer.slice(ttfUint8.byteOffset, ttfUint8.byteOffset + ttfUint8.byteLength);
     }
 
