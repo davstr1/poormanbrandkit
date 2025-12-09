@@ -295,7 +295,9 @@ class BrandKitGenerator {
      */
     async discoverFontWeights(fontName) {
         const fontFamily = fontName.replace(/ /g, '+');
-        const cssUrl = `https://fonts.googleapis.com/css2?family=${fontFamily}:wght@100..900&display=swap`;
+        // Request all possible weights - Google Fonts will only return those that exist
+        const allWeights = '100;200;300;400;500;600;700;800;900';
+        const cssUrl = `https://fonts.googleapis.com/css2?family=${fontFamily}:wght@${allWeights}&display=swap`;
 
         try {
             const response = await fetch(cssUrl);
