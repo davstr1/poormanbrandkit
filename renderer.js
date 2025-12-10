@@ -4,6 +4,7 @@
 const Renderer = {
     /**
      * Render multi-line text on a canvas with automatic scaling.
+     * Uses TextMetrics API for accurate vertical centering.
      * @param {CanvasRenderingContext2D} ctx - Canvas 2D context
      * @param {number} size - Canvas size in pixels
      * @param {Object} state - Application state (lines, font, colors, etc.)
@@ -13,16 +14,16 @@ const Renderer = {
         const paddingPx = size * padding;
         const availableSize = size - paddingPx * 2;
 
-        // Calculate dimensions for all lines at base size
+        // Phase 1: Calculate metrics for all lines at base size
         let maxLineWidth = 0;
-        let totalHeight = 0;
         const lineMetrics = [];
 
-        state.lines.forEach((line, index) => {
+        state.lines.forEach((line) => {
             const lineFontSize = (line.fontSize / 100) * state.baseFontSize;
-            const lineFontWeight = line.fontWeight || state.fontWeight;
+            const lineFontWeight = line.fontWeight || CONFIG.DEFAULTS.FONT_WEIGHT;
             ctx.font = `${lineFontWeight} ${lineFontSize}px "${state.font}"`;
 
+            // Calculate line width
             let lineWidth = 0;
             line.letters.forEach((letter, i) => {
                 lineWidth += ctx.measureText(letter.char).width;
@@ -30,41 +31,74 @@ const Renderer = {
                     lineWidth += line.letterSpacing;
                 }
             });
-
             maxLineWidth = Math.max(maxLineWidth, lineWidth);
-            const lineHeight = lineFontSize * 1.1;
-            totalHeight += lineHeight;
-            if (index < state.lines.length - 1) {
-                totalHeight += state.lineSpacing;
-            }
 
-            lineMetrics.push({ lineWidth, lineHeight, lineFontSize, lineFontWeight, line });
+            // Get real ascent/descent using TextMetrics
+            let maxAscent = 0;
+            let maxDescent = 0;
+            line.letters.forEach((letter) => {
+                const metrics = ctx.measureText(letter.char);
+                maxAscent = Math.max(maxAscent, metrics.actualBoundingBoxAscent || lineFontSize * 0.8);
+                maxDescent = Math.max(maxDescent, metrics.actualBoundingBoxDescent || lineFontSize * 0.2);
+            });
+
+            lineMetrics.push({
+                lineWidth,
+                lineFontSize,
+                lineFontWeight,
+                line,
+                ascent: maxAscent,
+                descent: maxDescent,
+                visualHeight: maxAscent + maxDescent
+            });
         });
 
-        // Calculate scale to fit
+        // Phase 2: Calculate baseline positions and total visual height
+        const baselinePositions = [];
+        let currentBaseline = 0;
+
+        lineMetrics.forEach((metrics, i) => {
+            if (i === 0) {
+                // First line: baseline starts at its ascent
+                currentBaseline = metrics.ascent;
+            }
+            baselinePositions.push(currentBaseline);
+
+            // Move to next line: descent + spacing + next ascent
+            if (i < lineMetrics.length - 1) {
+                const nextAscent = lineMetrics[i + 1].ascent;
+                currentBaseline += metrics.descent + state.lineSpacing + nextAscent;
+            }
+        });
+
+        // Calculate total visual height (from top of first line to bottom of last)
+        const lastIndex = lineMetrics.length - 1;
+        const totalVisualHeight = baselinePositions[lastIndex] + lineMetrics[lastIndex].descent;
+
+        // Phase 3: Calculate scale to fit
         const scaleX = availableSize / maxLineWidth;
-        const scaleY = availableSize / totalHeight;
+        const scaleY = availableSize / totalVisualHeight;
         const scale = Math.min(scaleX, scaleY, 1);
 
-        // Recalculate with scaled dimensions
-        const scaledTotalHeight = totalHeight * scale;
-        let startY = (size - scaledTotalHeight) / 2;
+        // Calculate vertical offset to center
+        const scaledVisualHeight = totalVisualHeight * scale;
+        const offsetY = (size - scaledVisualHeight) / 2;
 
-        // Draw each line
-        lineMetrics.forEach(({ lineWidth, lineHeight, lineFontSize, lineFontWeight, line }) => {
+        // Phase 4: Draw each line
+        ctx.textBaseline = 'alphabetic';
+
+        lineMetrics.forEach((metrics, i) => {
+            const { lineFontSize, lineFontWeight, line } = metrics;
             const scaledFontSize = lineFontSize * scale;
-            const scaledLineHeight = lineHeight * scale;
-            const scaledLineSpacing = state.lineSpacing * scale;
+            const scaledLetterSpacing = line.letterSpacing * scale;
 
             ctx.font = `${lineFontWeight} ${scaledFontSize}px "${state.font}"`;
-            ctx.textBaseline = 'top';
 
-            // Recalculate line width with scaled font
+            // Calculate scaled line width for alignment
             let scaledLineWidth = 0;
-            const scaledLetterSpacing = line.letterSpacing * scale;
-            line.letters.forEach((letter, i) => {
+            line.letters.forEach((letter, j) => {
                 scaledLineWidth += ctx.measureText(letter.char).width;
-                if (i < line.letters.length - 1) {
+                if (j < line.letters.length - 1) {
                     scaledLineWidth += scaledLetterSpacing;
                 }
             });
@@ -76,9 +110,11 @@ const Renderer = {
             } else if (state.horizontalAlign === 'right') {
                 x = size - paddingPx - scaledLineWidth;
             } else {
-                // center
                 x = (size - scaledLineWidth) / 2;
             }
+
+            // Calculate Y position (baseline)
+            const y = offsetY + baselinePositions[i] * scale;
 
             // Calculate positions for all letters
             const positions = [];
@@ -91,10 +127,8 @@ const Renderer = {
             const drawOrder = state.layerOrder === 'left' ? [...positions].reverse() : positions;
             drawOrder.forEach(({ letter, x }) => {
                 ctx.fillStyle = letter.color || state.defaultColor;
-                ctx.fillText(letter.char, x, startY);
+                ctx.fillText(letter.char, x, y);
             });
-
-            startY += scaledLineHeight + scaledLineSpacing;
         });
     },
 
