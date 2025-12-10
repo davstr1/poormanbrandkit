@@ -131,6 +131,7 @@ const Exporter = {
 
     /**
      * Generate SVG logo with vector paths from opentype.js.
+     * Uses real glyph bounding boxes for accurate line spacing.
      * @async
      * @param {Object} opentypeFont - Loaded opentype.js font
      * @param {Object} state - Application state
@@ -140,19 +141,29 @@ const Exporter = {
         const font = opentypeFont;
         const padding = CONFIG.PADDING.SVG;
 
-        // Calculate dimensions for all lines
+        // Calculate dimensions for all lines using real glyph metrics
         let maxLineWidth = 0;
-        let totalHeight = 0;
         const linesData = [];
 
-        state.lines.forEach((line, lineIndex) => {
+        state.lines.forEach((line) => {
             const lineFontSize = (line.fontSize / 100) * state.baseFontSize;
             const positions = [];
             let x = 0;
+            let maxAscent = 0;
+            let maxDescent = 0;
 
             line.letters.forEach((letter) => {
                 const glyph = font.charToGlyph(letter.char);
-                const width = glyph.advanceWidth * (lineFontSize / font.unitsPerEm);
+                const scale = lineFontSize / font.unitsPerEm;
+                const width = glyph.advanceWidth * scale;
+
+                // Get real bounding box for ascent/descent
+                const bbox = glyph.getBoundingBox();
+                maxAscent = Math.max(maxAscent, bbox.y2 * scale);
+                // Descent is distance below baseline (positive value)
+                const descent = bbox.y1 < 0 ? -bbox.y1 * scale : 0;
+                maxDescent = Math.max(maxDescent, descent);
+
                 positions.push({ letter, x, width, lineFontSize });
                 x += width + line.letterSpacing;
             });
@@ -162,17 +173,39 @@ const Exporter = {
                 : 0;
             maxLineWidth = Math.max(maxLineWidth, lineWidth);
 
-            const lineHeight = lineFontSize * 1.2;
-            totalHeight += lineHeight;
-            if (lineIndex < state.lines.length - 1) {
-                totalHeight += state.lineSpacing;
-            }
-
-            linesData.push({ positions, lineWidth, lineFontSize, lineHeight });
+            // Ensure minimum descent for consistent spacing with capitals
+            const minDescent = lineFontSize * 0.15;
+            linesData.push({
+                positions,
+                lineWidth,
+                lineFontSize,
+                ascent: maxAscent || lineFontSize * 0.8,
+                descent: Math.max(maxDescent, minDescent)
+            });
         });
 
+        // Calculate baseline positions (same logic as canvas renderer)
+        const baselinePositions = [];
+        let currentBaseline = 0;
+
+        linesData.forEach((lineData, i) => {
+            if (i === 0) {
+                currentBaseline = lineData.ascent;
+            }
+            baselinePositions.push(currentBaseline);
+
+            if (i < linesData.length - 1) {
+                const nextAscent = linesData[i + 1].ascent;
+                currentBaseline += lineData.descent + state.lineSpacing + nextAscent;
+            }
+        });
+
+        // Calculate total visual height
+        const lastIndex = linesData.length - 1;
+        const totalVisualHeight = baselinePositions[lastIndex] + linesData[lastIndex].descent;
+
         const svgWidth = Math.ceil(Math.max(maxLineWidth + padding * 2, 200));
-        const svgHeight = Math.ceil(totalHeight + padding * 2);
+        const svgHeight = Math.ceil(totalVisualHeight + padding * 2);
 
         // Build SVG
         let svgContent = `<?xml version="1.0" encoding="UTF-8"?>
@@ -184,10 +217,9 @@ const Exporter = {
             svgContent += `  <rect width="100%" height="100%" fill="${state.bgColor}"/>\n`;
         }
 
-        // Draw each line
-        let currentY = padding;
-        linesData.forEach((lineData) => {
-            const { positions, lineWidth, lineFontSize, lineHeight } = lineData;
+        // Draw each line at its calculated baseline
+        linesData.forEach((lineData, i) => {
+            const { positions, lineWidth, lineFontSize } = lineData;
 
             // Calculate X offset based on alignment
             let xOffset;
@@ -199,7 +231,8 @@ const Exporter = {
                 xOffset = (svgWidth - lineWidth) / 2;
             }
 
-            const y = currentY + lineFontSize;
+            // Y position is padding + baseline position
+            const y = padding + baselinePositions[i];
 
             // Draw letters in correct order
             const drawOrder = state.layerOrder === 'left' ? [...positions].reverse() : positions;
@@ -209,8 +242,6 @@ const Exporter = {
                 const pathData = path.toPathData(2);
                 svgContent += `  <path d="${pathData}" fill="${color}"/>\n`;
             });
-
-            currentY += lineHeight + state.lineSpacing;
         });
 
         svgContent += `</svg>`;
