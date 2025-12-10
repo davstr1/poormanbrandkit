@@ -1203,11 +1203,11 @@ class BrandKitGenerator {
                 return;
             }
 
-            // Recalculate with opentype for accurate SVG
+            // Recalculate with opentype for accurate SVG using real glyph metrics
             let maxOpentypeWidth = 0;
             const linesData = [];
 
-            this.lines.forEach((line, lineIndex) => {
+            this.lines.forEach((line) => {
                 const lineFontSize = (line.fontSize / 100) * this.baseFontSize;
                 let lineFontWeight = line.fontWeight || CONFIG.DEFAULTS.FONT_WEIGHT;
                 // Use the same validated weight as preloadAllWeights
@@ -1217,10 +1217,24 @@ class BrandKitGenerator {
                 const font = fontMap[lineFontWeight];
                 const positions = [];
                 let x = 0;
+                let maxAscent = 0;
+                let maxDescent = 0;
 
                 line.letters.forEach((letter) => {
                     const glyph = font.charToGlyph(letter.char);
-                    const width = glyph.advanceWidth * (lineFontSize / font.unitsPerEm);
+                    const scale = lineFontSize / font.unitsPerEm;
+                    const width = glyph.advanceWidth * scale;
+
+                    // Get real bounding box for ascent/descent
+                    // bbox.y2 = top of glyph (positive, above baseline)
+                    // bbox.y1 = bottom of glyph (negative if descender, positive if above baseline)
+                    const bbox = glyph.getBoundingBox();
+                    maxAscent = Math.max(maxAscent, bbox.y2 * scale);
+                    // Descent is distance below baseline (positive value)
+                    // If y1 < 0, there's a descender; if y1 >= 0, no descender (use 0)
+                    const descent = bbox.y1 < 0 ? -bbox.y1 * scale : 0;
+                    maxDescent = Math.max(maxDescent, descent);
+
                     positions.push({ letter, x, width, lineFontSize, font });
                     x += width + line.letterSpacing;
                 });
@@ -1229,10 +1243,40 @@ class BrandKitGenerator {
                     ? positions[positions.length - 1].x + positions[positions.length - 1].width
                     : 0;
                 maxOpentypeWidth = Math.max(maxOpentypeWidth, lineWidth);
-                linesData.push({ positions, lineWidth, lineFontSize, lineHeight: lineMetrics[lineIndex].lineHeight });
+                // Ensure minimum descent for consistent spacing with canvas
+                // Canvas TextMetrics reports small descent even for capitals
+                const minDescent = lineFontSize * 0.15;
+                linesData.push({
+                    positions,
+                    lineWidth,
+                    lineFontSize,
+                    ascent: maxAscent || lineFontSize * 0.8,
+                    descent: Math.max(maxDescent, minDescent)
+                });
             });
 
+            // Calculate baseline positions (same logic as canvas renderer)
+            const baselinePositions = [];
+            let currentBaseline = 0;
+
+            linesData.forEach((lineData, i) => {
+                if (i === 0) {
+                    currentBaseline = lineData.ascent;
+                }
+                baselinePositions.push(currentBaseline);
+
+                if (i < linesData.length - 1) {
+                    const nextAscent = linesData[i + 1].ascent;
+                    currentBaseline += lineData.descent + this.lineSpacing + nextAscent;
+                }
+            });
+
+            // Calculate total visual height
+            const lastIndex = linesData.length - 1;
+            const totalVisualHeight = baselinePositions[lastIndex] + linesData[lastIndex].descent;
+
             const finalSvgWidth = Math.max(maxOpentypeWidth + padding * 2, 200);
+            const finalSvgHeight = totalVisualHeight + padding * 2;
 
             // Build SVG content
             let svgContent = '';
@@ -1242,10 +1286,9 @@ class BrandKitGenerator {
                 svgContent += `<rect width="100%" height="100%" fill="${this.bgColor}"/>`;
             }
 
-            // Draw each line
-            let currentY = padding;
-            linesData.forEach((lineData) => {
-                const { positions, lineWidth, lineFontSize, lineHeight } = lineData;
+            // Draw each line at its calculated baseline
+            linesData.forEach((lineData, i) => {
+                const { positions, lineWidth } = lineData;
 
                 // Calculate X offset based on alignment
                 let xOffset;
@@ -1254,11 +1297,11 @@ class BrandKitGenerator {
                 } else if (this.horizontalAlign === 'right') {
                     xOffset = finalSvgWidth - padding - lineWidth;
                 } else {
-                    // center
                     xOffset = (finalSvgWidth - lineWidth) / 2;
                 }
 
-                const y = currentY + lineFontSize;
+                // Y position is padding + baseline position
+                const y = padding + baselinePositions[i];
 
                 // Draw letters in correct order
                 const drawOrder = this.layerOrder === 'left' ? [...positions].reverse() : positions;
@@ -1268,13 +1311,12 @@ class BrandKitGenerator {
                     const pathData = path.toPathData(2);
                     svgContent += `<path d="${pathData}" fill="${color}"/>`;
                 });
-
-                currentY += lineHeight + this.lineSpacing;
             });
 
-            // Update SVG element
+            // Update SVG element with final dimensions
             this.svgElement.setAttribute('width', finalSvgWidth);
-            this.svgElement.setAttribute('viewBox', `0 0 ${finalSvgWidth} ${svgHeight}`);
+            this.svgElement.setAttribute('height', finalSvgHeight);
+            this.svgElement.setAttribute('viewBox', `0 0 ${finalSvgWidth} ${finalSvgHeight}`);
             this.svgElement.innerHTML = svgContent;
 
         } catch (error) {
