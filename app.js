@@ -1522,92 +1522,23 @@ class BrandKitGenerator {
     }
 
     /**
-     * Generate SVG logo with vector paths from opentype.js.
-     * @async
-     * @returns {Promise<string>} SVG markup
+     * Generate SVG logo for export.
+     * Reuses the preview SVG element to ensure exact match with what user sees.
+     * @returns {string} SVG markup with XML header
      */
-    async generateSVG() {
-        const { fontMap } = await this.preloadAllWeights();
-        const padding = CONFIG.PADDING.SVG;
+    generateSVG() {
+        // Get the SVG from the preview element - ensures WYSIWYG
+        const svgElement = this.svgElement;
+        const width = svgElement.getAttribute('width');
+        const height = svgElement.getAttribute('height');
+        const viewBox = svgElement.getAttribute('viewBox');
+        const innerHTML = svgElement.innerHTML;
 
-        // Calculate dimensions for all lines
-        let maxLineWidth = 0;
-        let totalHeight = 0;
-        const linesData = [];
-
-        this.lines.forEach((line, lineIndex) => {
-            const lineFontSize = (line.fontSize / 100) * this.baseFontSize;
-            const lineFontWeight = line.fontWeight || CONFIG.DEFAULTS.FONT_WEIGHT;
-            const font = fontMap[lineFontWeight];
-            const positions = [];
-            let x = 0;
-
-            line.letters.forEach((letter) => {
-                const glyph = font.charToGlyph(letter.char);
-                const width = glyph.advanceWidth * (lineFontSize / font.unitsPerEm);
-                positions.push({ letter, x, width, lineFontSize, font });
-                x += width + line.letterSpacing;
-            });
-
-            const lineWidth = positions.length > 0
-                ? positions[positions.length - 1].x + positions[positions.length - 1].width
-                : 0;
-            maxLineWidth = Math.max(maxLineWidth, lineWidth);
-
-            const lineHeight = lineFontSize * 1.2;
-            totalHeight += lineHeight;
-            if (lineIndex < this.lines.length - 1) {
-                totalHeight += this.lineSpacing;
-            }
-
-            linesData.push({ positions, lineWidth, lineFontSize, lineHeight });
-        });
-
-        const svgWidth = Math.ceil(Math.max(maxLineWidth + padding * 2, 200));
-        const svgHeight = Math.ceil(totalHeight + padding * 2);
-
-        // Build SVG
-        let svgContent = `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgWidth} ${svgHeight}" width="${svgWidth}" height="${svgHeight}">
-`;
-
-        // Add background if needed
-        if (this.bgType === 'color') {
-            svgContent += `  <rect width="100%" height="100%" fill="${this.bgColor}"/>\n`;
-        }
-
-        // Draw each line
-        let currentY = padding;
-        linesData.forEach((lineData) => {
-            const { positions, lineWidth, lineFontSize, lineHeight } = lineData;
-
-            // Calculate X offset based on alignment
-            let xOffset;
-            if (this.horizontalAlign === 'left') {
-                xOffset = padding;
-            } else if (this.horizontalAlign === 'right') {
-                xOffset = svgWidth - padding - lineWidth;
-            } else {
-                // center
-                xOffset = (svgWidth - lineWidth) / 2;
-            }
-
-            const y = currentY + lineFontSize;
-
-            // Draw letters in correct order
-            const drawOrder = this.layerOrder === 'left' ? [...positions].reverse() : positions;
-            drawOrder.forEach(({ letter, x, lineFontSize: fontSize, font }) => {
-                const color = letter.color || this.defaultColor;
-                const path = font.getPath(letter.char, xOffset + x, y, fontSize);
-                const pathData = path.toPathData(2);
-                svgContent += `  <path d="${pathData}" fill="${color}"/>\n`;
-            });
-
-            currentY += lineHeight + this.lineSpacing;
-        });
-
-        svgContent += `</svg>`;
-        return svgContent;
+        // Build complete SVG with XML header
+        return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" width="${width}" height="${height}">
+${innerHTML}
+</svg>`;
     }
 
     /**
@@ -1674,10 +1605,10 @@ class BrandKitGenerator {
             await new Promise(resolve => setTimeout(resolve, 10));
         }
 
-        // Generate SVG file
+        // Generate SVG file (reuses the preview SVG)
         progressText.textContent = 'Generating SVG...';
         try {
-            const svg = await this.generateSVG();
+            const svg = this.generateSVG();
             zip.folder('logos').file('logo.svg', svg);
         } catch (e) {
             console.error('SVG generation failed:', e);
