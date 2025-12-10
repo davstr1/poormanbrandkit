@@ -1614,6 +1614,18 @@ ${innerHTML}
             console.error('SVG generation failed:', e);
         }
 
+        // Generate favicon.ico (multi-resolution: 16, 32, 48)
+        progressText.textContent = 'Generating favicon.ico...';
+        try {
+            const icoCanvas = this.renderToCanvas(48);
+            const favicon = new FaviconJS(icoCanvas);
+            const icoDataUrl = favicon.ico([16, 32, 48]);
+            const icoBlob = await fetch(icoDataUrl).then(r => r.blob());
+            zip.folder('favicons').file('favicon.ico', icoBlob);
+        } catch (e) {
+            console.error('Favicon.ico generation failed:', e);
+        }
+
         // Add font files (all weights used)
         progressText.textContent = 'Downloading fonts...';
         try {
@@ -1675,6 +1687,7 @@ Contents:
   - logo.svg - Vector format (scalable)
 
 /favicons/
+  - favicon.ico - Multi-resolution favicon (16x16, 32x32, 48x48)
   - favicon-16x16.png - Browser tab icon
   - favicon-32x32.png - Browser tab icon (retina)
   - favicon-48x48.png - Windows site icon
@@ -1705,6 +1718,7 @@ Usage:
 
 Web Favicons - Add to your HTML <head>:
 
+  <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
