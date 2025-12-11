@@ -19,9 +19,9 @@ const CONFIG = {
     // Export sizes for brand kit ZIP
     EXPORT: {
         LOGO_SIZES: [1024, 512, 256, 128],
-        FAVICON_SIZES: [16, 32, 48, 180],
+        FAVICON_SIZES: [16, 32, 48],
         IOS_SIZES: [1024, 180, 167, 152, 120],
-        ANDROID_SIZES: [512, 192, 144, 96, 72, 48]
+        PWA_SIZES: [192, 512]  // For website-root (Android Chrome icons)
     },
 
     // App icon corner radius ratios
@@ -1562,25 +1562,27 @@ ${innerHTML}
         const zip = new JSZip();
         const assets = [];
 
-        // Logos
+        // Logos (go to /assets/)
         CONFIG.EXPORT.LOGO_SIZES.forEach(size => {
-            assets.push({ folder: 'logos', name: `logo-${size}.png`, size });
+            assets.push({ folder: 'assets', name: `logo-${size}.png`, size });
         });
 
-        // Favicons
+        // Favicons (go to /website-root/)
         CONFIG.EXPORT.FAVICON_SIZES.forEach(size => {
-            const name = size === 180 ? 'apple-touch-icon.png' : `favicon-${size}x${size}.png`;
-            assets.push({ folder: 'favicons', name, size });
+            assets.push({ folder: 'website-root', name: `favicon-${size}x${size}.png`, size });
         });
 
-        // iOS (with app icon style)
+        // Apple Touch Icon (go to /website-root/)
+        assets.push({ folder: 'website-root', name: 'apple-touch-icon.png', size: 180 });
+
+        // PWA icons (go to /website-root/)
+        CONFIG.EXPORT.PWA_SIZES.forEach(size => {
+            assets.push({ folder: 'website-root', name: `android-chrome-${size}x${size}.png`, size });
+        });
+
+        // iOS (go to /assets/ios/)
         CONFIG.EXPORT.IOS_SIZES.forEach(size => {
-            assets.push({ folder: 'ios', name: `ios-${size}.png`, size, type: 'appicon', radius: CONFIG.RADIUS.IOS });
-        });
-
-        // Android (with app icon style)
-        CONFIG.EXPORT.ANDROID_SIZES.forEach(size => {
-            assets.push({ folder: 'android', name: `android-${size}.png`, size, type: 'appicon', radius: CONFIG.RADIUS.ANDROID });
+            assets.push({ folder: 'assets/ios', name: `ios-${size}.png`, size, type: 'appicon', radius: CONFIG.RADIUS.IOS });
         });
 
         const totalAssets = assets.length;
@@ -1609,7 +1611,7 @@ ${innerHTML}
         progressText.textContent = 'Generating SVG...';
         try {
             const svg = this.generateSVG();
-            zip.folder('logos').file('logo.svg', svg);
+            zip.folder('assets').file('logo.svg', svg);
         } catch (e) {
             console.error('SVG generation failed:', e);
         }
@@ -1621,10 +1623,25 @@ ${innerHTML}
             const favicon = new FaviconJS(icoCanvas);
             const icoDataUrl = favicon.ico([16, 32, 48]);
             const icoBlob = await fetch(icoDataUrl).then(r => r.blob());
-            zip.folder('favicons').file('favicon.ico', icoBlob);
+            zip.folder('website-root').file('favicon.ico', icoBlob);
         } catch (e) {
             console.error('Favicon.ico generation failed:', e);
         }
+
+        // Generate site.webmanifest
+        progressText.textContent = 'Generating manifest...';
+        const manifest = JSON.stringify({
+            name: this.logoText,
+            short_name: this.logoText,
+            icons: [
+                { src: '/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' },
+                { src: '/android-chrome-512x512.png', sizes: '512x512', type: 'image/png' }
+            ],
+            theme_color: this.bgColor,
+            background_color: this.bgColor,
+            display: 'standalone'
+        }, null, 2);
+        zip.folder('website-root').file('site.webmanifest', manifest);
 
         // Add font files (all weights used)
         progressText.textContent = 'Downloading fonts...';
@@ -1639,7 +1656,7 @@ ${innerHTML}
             for (const weight of weights) {
                 const fontBuffer = await this.fetchFullFont(weight);
                 const fontFileName = `${this.font.replace(/\s+/g, '-')}-${weight}.ttf`;
-                zip.folder('fonts').file(fontFileName, fontBuffer);
+                zip.folder('assets/fonts').file(fontFileName, fontBuffer);
             }
 
             // Add font license info
@@ -1656,7 +1673,7 @@ You can use it freely in your personal and commercial projects.
 For more information about this font's specific license,
 visit: https://fonts.google.com/specimen/${this.font.replace(/\s+/g, '+')}#license
 `;
-            zip.folder('fonts').file('LICENSE.txt', fontLicense);
+            zip.folder('assets/fonts').file('LICENSE.txt', fontLicense);
         } catch (e) {
             console.error('Font download failed:', e);
             // Non-blocking error - continue without font
@@ -1676,68 +1693,74 @@ https://github.com/davstr1/poormanbrandkit
 
 Font: ${this.font} (weights: ${weightsStr})
 
-Contents:
----------
 
-/logos/
-  - logo-1024.png (1024x1024) - Full size logo
-  - logo-512.png (512x512)
-  - logo-256.png (256x256)
-  - logo-128.png (128x128)
-  - logo.svg - Vector format (scalable)
+QUICK START
+-----------
 
-/favicons/
-  - favicon.ico - Multi-resolution favicon (16x16, 32x32, 48x48)
-  - favicon-16x16.png - Browser tab icon
-  - favicon-32x32.png - Browser tab icon (retina)
-  - favicon-48x48.png - Windows site icon
-  - apple-touch-icon.png (180x180) - iOS Safari bookmark
-
-/ios/
-  - ios-1024.png - App Store (required)
-  - ios-180.png - iPhone @3x
-  - ios-167.png - iPad Pro
-  - ios-152.png - iPad
-  - ios-120.png - iPhone @2x
-
-/android/
-  - android-512.png - Play Store (required)
-  - android-192.png - xxxhdpi launcher
-  - android-144.png - xxhdpi launcher
-  - android-96.png - xhdpi launcher
-  - android-72.png - hdpi launcher
-  - android-48.png - mdpi launcher
-
-/fonts/
-${fontFiles}
-  - LICENSE.txt - Font license information
+1. Copy the CONTENTS of /website-root/ to your website's root directory
+2. Add the meta tags below to your HTML <head>
 
 
-Usage:
-------
+META TAGS (copy-paste into <head>)
+----------------------------------
 
-Web Favicons - Add to your HTML <head>:
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="${this.bgColor}">
 
-  <link rel="icon" href="/favicon.ico" sizes="any">
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 
-iOS App Store:
-  Use ios-1024.png for App Store Connect submission.
-  Xcode will use the other sizes for device icons.
+ABOUT site.webmanifest
+----------------------
 
-Android / Google Play:
-  Use android-512.png for Play Store submission.
-  Place other sizes in res/mipmap-* folders.
+The site.webmanifest file enables "Add to Home Screen" on mobile devices.
+Edit it to customize your app name if different from your logo text.
 
-SVG Logo:
-  Use logo.svg for websites, print, or any scalable usage.
-  The SVG contains vector paths (not embedded fonts).
 
-Font:
-  Install the TTF file to use the same font in other apps.
-  The font is from Google Fonts - see LICENSE.txt for terms.
+CONTENTS
+--------
+
+/website-root/  (copy to your website root)
+  - favicon.ico              Multi-resolution (16, 32, 48px)
+  - favicon-16x16.png        Browser tab icon
+  - favicon-32x32.png        Browser tab icon (retina)
+  - favicon-48x48.png        Windows site icon
+  - apple-touch-icon.png     iOS Safari bookmark (180x180)
+  - android-chrome-192x192.png   PWA / Android home screen
+  - android-chrome-512x512.png   PWA / Android splash screen
+  - site.webmanifest         PWA manifest (edit to customize)
+
+/assets/  (for design, App Store, etc.)
+  - logo.svg                 Vector logo (scalable)
+  - logo-1024.png            High-resolution logo
+  - logo-512.png
+  - logo-256.png
+  - logo-128.png
+  - /ios/                    App Store / Xcode icons
+  - /fonts/                  Font files + license
+
+
+iOS APP STORE
+-------------
+
+Use /assets/ios/ios-1024.png for App Store Connect submission.
+Other sizes (180, 167, 152, 120) are for device icons in Xcode.
+
+
+SVG LOGO
+--------
+
+Use /assets/logo.svg for websites, print, or any scalable usage.
+The SVG contains vector paths (not embedded fonts).
+
+
+FONT
+----
+
+Install the TTF files from /assets/fonts/ to use the same font in other apps.
+The font is from Google Fonts - see LICENSE.txt for terms.
 `;
 
         zip.file('README.txt', readme);
