@@ -55,10 +55,8 @@ const CONFIG = {
         LINE_SPACING: 10,
         HORIZONTAL_ALIGN: 'center',
         DEFAULT_COLOR: '#333333',
-        BG_TYPE: 'transparent',
         BG_COLOR: '#ffffff',
         LAYER_ORDER: 'right',
-        APP_ICON_BG: '#ffffff',
         APP_ICON_BORDER: '#e0e0e0'
     }
 };

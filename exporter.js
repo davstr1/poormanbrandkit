@@ -212,10 +212,8 @@ const Exporter = {
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgWidth} ${svgHeight}" width="${svgWidth}" height="${svgHeight}">
 `;
 
-        // Add background if needed
-        if (state.bgType === 'color') {
-            svgContent += `  <rect width="100%" height="100%" fill="${state.bgColor}"/>\n`;
-        }
+        // Add background
+        svgContent += `  <rect width="100%" height="100%" fill="${state.bgColor}"/>\n`;
 
         // Draw each line at its calculated baseline
         linesData.forEach((lineData, i) => {
@@ -264,8 +262,7 @@ const Exporter = {
                 if (letter.color) colors.add(letter.color);
             });
         });
-        if (state.bgType === 'color') colors.add(state.bgColor);
-        colors.add(state.appIconBg);
+        colors.add(state.bgColor);
         if (state.appIconBorderEnabled) colors.add(state.appIconBorder);
 
         const colorList = [...colors].map(c => `  - ${c}`).join('\n');
