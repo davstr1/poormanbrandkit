@@ -78,7 +78,7 @@ const Renderer = {
         // Phase 3: Calculate scale to fit
         const scaleX = availableSize / maxLineWidth;
         const scaleY = availableSize / totalVisualHeight;
-        const scale = Math.min(scaleX, scaleY, 1);
+        const scale = Math.min(scaleX, scaleY);
 
         // Calculate vertical offset to center
         const scaledVisualHeight = totalVisualHeight * scale;
@@ -152,7 +152,7 @@ const Renderer = {
         ctx.clip();
 
         // Draw background
-        ctx.fillStyle = state.appIconBg;
+        ctx.fillStyle = state.bgColor;
         ctx.fillRect(0, 0, size, size);
 
         // Draw border if enabled
@@ -186,10 +186,8 @@ const Renderer = {
         canvas.height = size;
 
         // Background
-        if (state.bgType === 'color') {
-            ctx.fillStyle = state.bgColor;
-            ctx.fillRect(0, 0, size, size);
-        }
+        ctx.fillStyle = state.bgColor;
+        ctx.fillRect(0, 0, size, size);
 
         // Render multi-line text
         this.renderMultiLineText(ctx, size, state, CONFIG.PADDING.LOGO);
@@ -234,10 +232,8 @@ const Renderer = {
             ctx.clearRect(0, 0, preview.displaySize, preview.displaySize);
 
             // Draw background
-            if (state.bgType === 'color') {
-                ctx.fillStyle = state.bgColor;
-                ctx.fillRect(0, 0, preview.displaySize, preview.displaySize);
-            }
+            ctx.fillStyle = state.bgColor;
+            ctx.fillRect(0, 0, preview.displaySize, preview.displaySize);
 
             // Render multi-line text
             this.renderMultiLineText(ctx, preview.displaySize, state);

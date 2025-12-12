@@ -88,7 +88,6 @@ class BrandKitGenerator {
         this.lineSpacing = CONFIG.DEFAULTS.LINE_SPACING;
         this.horizontalAlign = CONFIG.DEFAULTS.HORIZONTAL_ALIGN;
         this.defaultColor = CONFIG.DEFAULTS.DEFAULT_COLOR;
-        this.bgType = CONFIG.DEFAULTS.BG_TYPE;
         this.bgColor = CONFIG.DEFAULTS.BG_COLOR;
         this.layerOrder = CONFIG.DEFAULTS.LAYER_ORDER;
         this.currentLineIndex = 0;
@@ -113,7 +112,6 @@ class BrandKitGenerator {
         });
 
         // App icon settings
-        this.appIconBg = CONFIG.DEFAULTS.APP_ICON_BG;
         this.appIconBorder = CONFIG.DEFAULTS.APP_ICON_BORDER;
         this.appIconBorderEnabled = true;
 
@@ -653,15 +651,6 @@ class BrandKitGenerator {
             });
         });
 
-        // Background type
-        document.querySelectorAll('input[name="bgType"]').forEach(radio => {
-            radio.addEventListener('change', (e) => {
-                this.bgType = e.target.value;
-                document.getElementById('bgColor').disabled = this.bgType === 'transparent';
-                this.render();
-            });
-        });
-
         // Background color
         document.getElementById('bgColor').addEventListener('input', (e) => {
             this.bgColor = e.target.value;
@@ -687,11 +676,6 @@ class BrandKitGenerator {
         });
 
         // App icon controls
-        document.getElementById('appIconBg').addEventListener('input', (e) => {
-            this.appIconBg = e.target.value;
-            this.renderAppIcons();
-        });
-
         document.getElementById('appIconBorder').addEventListener('input', (e) => {
             this.appIconBorder = e.target.value;
             this.renderAppIcons();
@@ -1113,10 +1097,8 @@ class BrandKitGenerator {
             lineSpacing: this.lineSpacing,
             horizontalAlign: this.horizontalAlign,
             defaultColor: this.defaultColor,
-            bgType: this.bgType,
             bgColor: this.bgColor,
             layerOrder: this.layerOrder,
-            appIconBg: this.appIconBg,
             appIconBorder: this.appIconBorder,
             appIconBorderEnabled: this.appIconBorderEnabled
         };
@@ -1184,9 +1166,7 @@ class BrandKitGenerator {
         this.svgElement.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
 
         // Show loading placeholder
-        this.svgElement.innerHTML = this.bgType === 'color'
-            ? `<rect width="100%" height="100%" fill="${this.bgColor}"/><text x="50%" y="50%" text-anchor="middle" fill="#999" font-size="14">Loading...</text>`
-            : `<text x="50%" y="50%" text-anchor="middle" fill="#999" font-size="14">Loading...</text>`;
+        this.svgElement.innerHTML = `<rect width="100%" height="100%" fill="${this.bgColor}"/><text x="50%" y="50%" text-anchor="middle" fill="#999" font-size="14">Loading...</text>`;
 
         // Load all font weights asynchronously
         try {
@@ -1282,9 +1262,7 @@ class BrandKitGenerator {
             let svgContent = '';
 
             // Background
-            if (this.bgType === 'color') {
-                svgContent += `<rect width="100%" height="100%" fill="${this.bgColor}"/>`;
-            }
+            svgContent += `<rect width="100%" height="100%" fill="${this.bgColor}"/>`;
 
             // Draw each line at its calculated baseline
             linesData.forEach((lineData, i) => {
@@ -1323,9 +1301,7 @@ class BrandKitGenerator {
             console.error('Error rendering SVG preview:', error);
             // Only show error if this is still the current render
             if (renderId === this.renderCounter) {
-                this.svgElement.innerHTML = this.bgType === 'color'
-                    ? `<rect width="100%" height="100%" fill="${this.bgColor}"/><text x="50%" y="50%" text-anchor="middle" fill="#f00" font-size="12">Loading error</text>`
-                    : `<text x="50%" y="50%" text-anchor="middle" fill="#f00" font-size="12">Loading error</text>`;
+                this.svgElement.innerHTML = `<rect width="100%" height="100%" fill="${this.bgColor}"/><text x="50%" y="50%" text-anchor="middle" fill="#f00" font-size="12">Loading error</text>`;
             }
         }
     }
@@ -1897,10 +1873,8 @@ The font is from Google Fonts - see LICENSE.txt for terms.
         this.horizontalAlign = parsed.horizontalAlign;
         this.font = parsed.font;
         this.defaultColor = parsed.defaultColor;
-        this.bgType = parsed.bgType;
         this.bgColor = parsed.bgColor;
         this.layerOrder = parsed.layerOrder;
-        this.appIconBg = parsed.appIconBg;
         this.appIconBorder = parsed.appIconBorder;
         this.appIconBorderEnabled = parsed.appIconBorderEnabled;
 
@@ -1919,19 +1893,12 @@ The font is from Google Fonts - see LICENSE.txt for terms.
             radio.checked = radio.value === this.horizontalAlign;
         });
 
-        // Background type radio
-        document.querySelectorAll('input[name="bgType"]').forEach(radio => {
-            radio.checked = radio.value === this.bgType;
-        });
-        document.getElementById('bgColor').disabled = this.bgType === 'transparent';
-
         // Layer order radio
         document.querySelectorAll('input[name="layerOrder"]').forEach(radio => {
             radio.checked = radio.value === this.layerOrder;
         });
 
         // App icon controls
-        document.getElementById('appIconBg').value = this.appIconBg;
         document.getElementById('appIconBorder').value = this.appIconBorder;
         document.getElementById('appIconBorderEnabled').checked = this.appIconBorderEnabled;
 

@@ -24,10 +24,8 @@ const Storage = {
             lineSpacing: state.lineSpacing,
             horizontalAlign: state.horizontalAlign,
             defaultColor: state.defaultColor,
-            bgType: state.bgType,
             bgColor: state.bgColor,
             layerOrder: state.layerOrder,
-            appIconBg: state.appIconBg,
             appIconBorder: state.appIconBorder,
             appIconBorderEnabled: state.appIconBorderEnabled,
             timestamp: Date.now()
@@ -111,6 +109,9 @@ const Storage = {
             horizontalAlign = CONFIG.DEFAULTS.HORIZONTAL_ALIGN;
         }
 
+        // Migration: use appIconBg as bgColor if bgColor not set (old configs)
+        const bgColor = config.bgColor || config.appIconBg || CONFIG.DEFAULTS.BG_COLOR;
+
         return {
             lines,
             baseFontSize,
@@ -118,10 +119,8 @@ const Storage = {
             horizontalAlign,
             font: config.font || CONFIG.DEFAULTS.FONT,
             defaultColor: config.defaultColor || CONFIG.DEFAULTS.DEFAULT_COLOR,
-            bgType: config.bgType || CONFIG.DEFAULTS.BG_TYPE,
-            bgColor: config.bgColor || CONFIG.DEFAULTS.BG_COLOR,
+            bgColor: bgColor,
             layerOrder: config.layerOrder || CONFIG.DEFAULTS.LAYER_ORDER,
-            appIconBg: config.appIconBg || CONFIG.DEFAULTS.APP_ICON_BG,
             appIconBorder: config.appIconBorder || CONFIG.DEFAULTS.APP_ICON_BORDER,
             appIconBorderEnabled: config.appIconBorderEnabled !== false
         };
